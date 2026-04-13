@@ -1,0 +1,77 @@
+app:
+  name: "ClickLess AI"
+  version: "0.1.0"
+  use_mock_api: true  # Set false when real Instacart API key is available
+
+instacart:
+  base_url: "https://connect.dev.instacart.tools/idp/v1"
+  timeout: 30
+  max_retries: 3
+  retry_backoff: 2.0
+  results_per_query: 10
+
+neo4j:
+  uri: "bolt://localhost:7687"
+  max_connection_lifetime: 3600
+  max_connection_pool_size: 50
+
+ollama:
+  base_url: "http://localhost:11434"
+  timeout: 120
+  models:
+    nlu: "mistral:7b"
+    spo: "mistral:7b"
+    general: "llama3.2-vision:11b"
+    vault: "llama3.2-vision:11b"
+    vision: "llama3.2:90b-vision-instruct-q4_K_M"
+
+ranking:
+  apriori:
+    min_support: 0.01
+    min_confidence: 0.3
+    top_k_suggestions: 5
+  logistic:
+    feature_weights:
+      price_ratio: 0.25
+      in_stock_prob: 0.30
+      tfidf_cosine: 0.25
+      reorder_rate: 0.20
+  kg_ranker:
+    weights:
+      logistic_score: 0.35
+      kg_nutrition_match: 0.25
+      apriori_copurchase: 0.20
+      graphrag_relevance: 0.20
+    top_k: 5
+
+nlu:
+  max_history_turns: 10
+  confidence_threshold: 0.7
+  intents:
+    - search_product
+    - add_to_cart
+    - remove_from_cart
+    - set_constraint
+    - checkout
+    - get_recommendation
+    - chit_chat
+
+knowledge_graph:
+  chunk_size: 250
+  chunk_overlap: 0.10
+  entity_similarity_threshold: 0.85
+  batch_insert_size: 500
+
+ui:
+  streamlit_port: 8501
+  max_cart_items: 50
+  products_per_page: 10
+
+evaluation:
+  test_scenarios_path: "evaluation/scenarios.py"
+  results_dir: "evaluation/results"
+  metrics:
+    tsr_target: 0.85
+    css_target: 0.90
+    clicks_saved_target: 10
+    ttfo_target_seconds: 5.0

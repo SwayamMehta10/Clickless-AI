@@ -1,0 +1,13 @@
+models:
+  - name: "mistral:7b"
+    size_gb: 4
+    purpose: "NLU intent/slot extraction + SPO triple extraction"
+    priority: 1  # Pull first -- required for core demo
+  - name: "llama3.2:11b"
+    size_gb: 6
+    purpose: "Credential vault, simple queries, session tokens"
+    priority: 2  # Required for core demo
+  - name: "llama3.2:90b-vision-instruct-q4_K_M"
+    size_gb: 50
+    purpose: "Complex queries + vision (browser screenshot interpretation)"
+    priority: 3  # Stretch goal -- skip if GPU memory insufficient
