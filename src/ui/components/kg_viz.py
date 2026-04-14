@@ -10,6 +10,8 @@ from typing import Dict, List, Optional
 import streamlit as st
 import streamlit.components.v1 as components
 
+from src.runtime.demo import DemoRuntimeConfig, get_product_subgraph_for_runtime
+
 logger = logging.getLogger(__name__)
 
 
@@ -68,7 +70,7 @@ def render_kg_subgraph(subgraph: Dict, height: int = 500) -> None:
     components.html(html_content, height=height + 50, scrolling=False)
 
 
-def render_kg_panel(product_name: Optional[str] = None) -> None:
+def render_kg_panel(product_name: Optional[str] = None, runtime_config: Optional[DemoRuntimeConfig] = None) -> None:
     """Render the KG visualization panel, fetching subgraph for a product."""
     st.subheader("Knowledge Graph")
 
@@ -78,8 +80,7 @@ def render_kg_panel(product_name: Optional[str] = None) -> None:
 
     with st.spinner(f"Loading KG for '{product_name}'..."):
         try:
-            from src.knowledge_graph.graph_query import get_product_subgraph
-            subgraph = get_product_subgraph(product_name, depth=2)
+            subgraph = get_product_subgraph_for_runtime(product_name, depth=2, runtime_config=runtime_config)
             node_count = len(subgraph.get("nodes", []))
             edge_count = len(subgraph.get("edges", []))
             st.caption(f"{node_count} nodes | {edge_count} relationships")

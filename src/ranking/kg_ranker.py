@@ -7,7 +7,7 @@ Weighted linear combination with configurable weights.
 from __future__ import annotations
 
 import logging
-from typing import Dict, List, Optional
+from typing import Callable, Dict, List, Optional
 
 from src.api.product_schema import Product, RankedProduct
 from src.knowledge_graph.graphrag_interface import get_relevance_score
@@ -63,6 +63,7 @@ def rank_with_kg(
     user_budget: Optional[float] = None,
     cart_item_names: Optional[List[str]] = None,
     weights: Optional[Dict[str, float]] = None,
+    relevance_scorer: Optional[Callable[[str, str, Optional[List[str]]], float]] = None,
 ) -> List[RankedProduct]:
     """Rank products using all available signals.
 
@@ -103,7 +104,8 @@ def rank_with_kg(
 
         # GraphRAG relevance (skip if KG unavailable to keep latency low)
         try:
-            graphrag = get_relevance_score(product.name or "", query, dietary_flags)
+            scorer = relevance_scorer or get_relevance_score
+            graphrag = scorer(product.name or "", query, dietary_flags)
         except Exception:
             graphrag = 0.3
 

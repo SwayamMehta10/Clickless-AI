@@ -19,6 +19,14 @@ from src.nlu import intent_classifier, slot_filler
 from src.nlu.dialogue_state import DialogueState, Slots
 from src.orchestration.state import AgentState
 from src.ranking.kg_ranker import rank_with_kg
+from src.runtime.demo import (
+    DemoRuntimeConfig,
+    classify_intent_mock,
+    extract_slots_mock,
+    generate_response_mock,
+    get_api_client_for_runtime,
+    rank_products_for_runtime,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -62,15 +70,22 @@ def nlu_agent(state: AgentState) -> AgentState:
 
     ds: DialogueState = state["dialogue_state"]
     history_text = ds.get_history_text()
+    runtime_config: DemoRuntimeConfig | None = state.get("runtime_config")
 
     # Intent classification
-    intent, confidence = intent_classifier.classify(last_user_msg, history_text)
+    if runtime_config is not None and runtime_config.mode_for("llm") == "Mocked":
+        intent, confidence = classify_intent_mock(last_user_msg, history_text)
+    else:
+        intent, confidence = intent_classifier.classify(last_user_msg, history_text)
     logger.info("NLU: intent=%s (confidence=%.2f)", intent, confidence)
 
     # Slot filling (only for search/add/set_constraint intents)
     new_slots = Slots()
     if intent in ("search_product", "add_to_cart", "set_constraint"):
-        new_slots = slot_filler.extract_slots(last_user_msg, history_text)
+        if runtime_config is not None and runtime_config.mode_for("llm") == "Mocked":
+            new_slots = extract_slots_mock(last_user_msg, history_text)
+        else:
+            new_slots = slot_filler.extract_slots(last_user_msg, history_text)
         ds.slots = slot_filler.merge_slots(ds.slots, new_slots)
 
     ds.current_intent = intent
@@ -94,7 +109,8 @@ def api_agent(state: AgentState) -> AgentState:
     if not query:
         return {**state, "error": "No search query extracted from your message."}
 
-    client = get_client()
+    runtime_config: DemoRuntimeConfig | None = state.get("runtime_config")
+    client = get_api_client_for_runtime(runtime_config) if runtime_config is not None else get_client()
     try:
         products = _run_async(client.search_products(
             query=query,
@@ -123,14 +139,25 @@ def kg_ranking_agent(state: AgentState) -> AgentState:
 
     ds: DialogueState = state["dialogue_state"]
     cart_names = [item.product.name for item in ds.cart if item.product.name]
+    runtime_config: DemoRuntimeConfig | None = state.get("runtime_config")
 
-    ranked = rank_with_kg(
-        query=ds.slots.item or "",
-        candidates=products,
-        dietary_flags=ds.slots.dietary_flags or ds.dietary_preferences,
-        user_budget=ds.slots.max_price or ds.budget,
-        cart_item_names=cart_names,
-    )
+    if runtime_config is not None:
+        ranked = rank_products_for_runtime(
+            runtime_config=runtime_config,
+            query=ds.slots.item or "",
+            candidates=products,
+            dietary_flags=ds.slots.dietary_flags or ds.dietary_preferences,
+            user_budget=ds.slots.max_price or ds.budget,
+            cart_item_names=cart_names,
+        )
+    else:
+        ranked = rank_with_kg(
+            query=ds.slots.item or "",
+            candidates=products,
+            dietary_flags=ds.slots.dietary_flags or ds.dietary_preferences,
+            user_budget=ds.slots.max_price or ds.budget,
+            cart_item_names=cart_names,
+        )
     logger.info("Ranking: %d products ranked", len(ranked))
     return {**state, "ranked_results": ranked}
 
@@ -198,6 +225,7 @@ def response_generator(state: AgentState) -> AgentState:
     ds: DialogueState = state["dialogue_state"]
     ranked = state.get("ranked_results", [])
     error = state.get("error")
+    runtime_config: DemoRuntimeConfig | None = state.get("runtime_config")
 
     # Format top results for prompt
     top_results = []
@@ -219,21 +247,25 @@ def response_generator(state: AgentState) -> AgentState:
         error=error or "none",
     )
 
-    try:
-        response = llm.generate(prompt, role="general")
-    except Exception as exc:
-        logger.error("Response generation failed: %s", exc)
-        if error:
-            response = f"I encountered an issue: {error}"
-        elif ranked:
-            top = ranked[0].product
-            response = f"I found {len(ranked)} products. Top result: {top.name} at ${top.price:.2f}."
-        else:
-            response = "I'm here to help with your grocery shopping! What are you looking for?"
+    if runtime_config is not None and runtime_config.mode_for("llm") == "Mocked":
+        response = generate_response_mock(state)
+    else:
+        try:
+            response = llm.generate(prompt, role="general")
+        except Exception as exc:
+            logger.error("Response generation failed: %s", exc)
+            if error:
+                response = f"I encountered an issue: {error}"
+            elif ranked:
+                top = ranked[0].product
+                response = f"I found {len(ranked)} products. Top result: {top.name} at ${top.price:.2f}."
+            else:
+                response = "I'm here to help with your grocery shopping! What are you looking for?"
 
     ds.add_turn("assistant", response)
     return {**state, "response_text": response, "dialogue_state": ds,
-            "messages": state["messages"] + [AIMessage(content=response)]}
+            "messages": state["messages"] + [AIMessage(content=response)],
+            "runtime_config": runtime_config}
 
 
 # ---------------------------------------------------------------------------

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated, List, Optional
+from typing import Annotated, Any, List, Optional
 
 from langgraph.graph.message import add_messages
 from typing_extensions import TypedDict
@@ -23,3 +23,4 @@ class AgentState(TypedDict):
     user_id: Optional[str]
     session_id: Optional[str]
     response_text: Optional[str]
+    runtime_config: Optional[Any]

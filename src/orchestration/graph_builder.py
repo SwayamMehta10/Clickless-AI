@@ -116,6 +116,7 @@ def run_pipeline(
     cart=None,
     user_id: str = "default",
     session_id: str = "default",
+    runtime_config=None,
 ) -> AgentState:
     """Run the full pipeline for a user message. Returns updated AgentState."""
     graph = get_graph()
@@ -131,6 +132,7 @@ def run_pipeline(
         "user_id": user_id,
         "session_id": session_id,
         "response_text": None,
+        "runtime_config": runtime_config,
     }
 
     result = graph.invoke(initial_state)

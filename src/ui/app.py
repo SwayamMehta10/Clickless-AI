@@ -21,6 +21,7 @@ from src.orchestration.graph_builder import run_pipeline
 from src.ui.components.cart import render_cart
 from src.ui.components.chat import render_results
 from src.ui.components.kg_viz import render_kg_panel
+from src.ui.demo_controls import get_demo_runtime_config, init_demo_runtime_state, render_demo_controls
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -37,6 +38,7 @@ st.set_page_config(
 # ---------------------------------------------------------------------------
 
 def _init_state() -> None:
+    init_demo_runtime_state()
     if "session_id" not in st.session_state:
         st.session_state.session_id = str(uuid.uuid4())[:8]
     if "dialogue_state" not in st.session_state:
@@ -78,6 +80,7 @@ with st.sidebar:
     ds.budget = budget if budget > 0 else None
     ds.dietary_preferences = dietary
 
+    render_demo_controls()
     st.divider()
 
     # Cart panel
@@ -105,13 +108,19 @@ with st.sidebar:
 if st.session_state.checkout_triggered:
     st.session_state.checkout_triggered = False
     ds = st.session_state.dialogue_state
+    runtime_config = get_demo_runtime_config()
     if ds.cart:
         with st.spinner("Starting browser checkout..."):
             try:
-                from src.browser.checkout_agent import run_checkout
-                result = asyncio.run(run_checkout(ds.cart, user_id="default"))
+                from src.runtime.demo import run_checkout_for_runtime
+
+                result = asyncio.run(run_checkout_for_runtime(
+                    ds.cart,
+                    user_id="default",
+                    runtime_config=runtime_config,
+                ))
                 if result["success"]:
-                    st.success("Checkout initiated! Check your Instacart app to complete payment.")
+                    st.success(result.get("result", "Checkout initiated."))
                 else:
                     st.error(f"Checkout failed: {result.get('error', 'Unknown error')}")
             except Exception as exc:
@@ -125,6 +134,7 @@ if st.session_state.checkout_triggered:
 
 st.title("ClickLess AI")
 st.caption("Describe what you need and I'll find the best options for you.")
+runtime_config = get_demo_runtime_config()
 
 # Render conversation history
 for msg in st.session_state.messages:
@@ -142,7 +152,7 @@ for msg in st.session_state.messages:
 # KG visualization expander
 if st.session_state.selected_product:
     with st.expander(f"Knowledge Graph: {st.session_state.selected_product}", expanded=False):
-        render_kg_panel(st.session_state.selected_product)
+        render_kg_panel(st.session_state.selected_product, runtime_config=runtime_config)
 
 # Chat input
 if prompt := st.chat_input("e.g. 'I need gluten-free bread under $5'"):
@@ -160,6 +170,7 @@ if prompt := st.chat_input("e.g. 'I need gluten-free bread under $5'"):
                     dialogue_state=st.session_state.dialogue_state,
                     user_id="default",
                     session_id=st.session_state.session_id,
+                    runtime_config=runtime_config,
                 )
                 st.session_state.dialogue_state = result_state["dialogue_state"]
                 response = result_state.get("response_text", "I'm here to help!")
