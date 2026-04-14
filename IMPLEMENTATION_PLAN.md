@@ -117,7 +117,7 @@ For **batch jobs**, create a Slurm script that starts Ollama before your app:
 #SBATCH --mem=64G
 #SBATCH --time=4:00:00
 
-module load mamba
+module load mamba/latest
 mamba activate /scratch/smehta90/clickless_env
 module load ollama/0.9.6
 

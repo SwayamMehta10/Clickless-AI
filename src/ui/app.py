@@ -131,15 +131,13 @@ for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
         if msg["role"] == "assistant" and msg.get("results"):
-            def _make_add_handler(rp: RankedProduct):
-                def _add():
-                    item = CartItem(product=rp.product, quantity=1)
-                    st.session_state.dialogue_state.add_to_cart(item)
-                    st.session_state.selected_product = rp.product.name
-                    st.rerun()
-                return _add
+            def _add_handler(rp: RankedProduct):
+                item = CartItem(product=rp.product, quantity=1)
+                st.session_state.dialogue_state.add_to_cart(item)
+                st.session_state.selected_product = rp.product.name
+                st.rerun()
 
-            render_results(msg["results"], on_add=_make_add_handler)
+            render_results(msg["results"], on_add=_add_handler)
 
 # KG visualization expander
 if st.session_state.selected_product:
@@ -171,15 +169,13 @@ if prompt := st.chat_input("e.g. 'I need gluten-free bread under $5'"):
                 st.markdown(response)
 
                 if ranked:
-                    def _make_add(rp: RankedProduct):
-                        def _add():
-                            item = CartItem(product=rp.product, quantity=1)
-                            st.session_state.dialogue_state.add_to_cart(item)
-                            st.session_state.selected_product = rp.product.name
-                            st.rerun()
-                        return _add
+                    def _add_handler_live(rp: RankedProduct):
+                        item = CartItem(product=rp.product, quantity=1)
+                        st.session_state.dialogue_state.add_to_cart(item)
+                        st.session_state.selected_product = rp.product.name
+                        st.rerun()
 
-                    render_results(ranked[:5], on_add=_make_add)
+                    render_results(ranked[:5], on_add=_add_handler_live)
 
                 if error:
                     st.warning(f"Note: {error}")

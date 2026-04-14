@@ -19,3 +19,6 @@ evaluation/results/*.json
 
 # Proposal
 Project Proposal.pdf
+
+# PyVis render artifacts (dropped into CWD by net.save_graph)
+lib/

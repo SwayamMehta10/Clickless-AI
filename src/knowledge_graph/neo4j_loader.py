@@ -52,7 +52,7 @@ def _batch_merge_triples(session, batch: List[dict]) -> None:
     session.run(query, triples=batch)
 
 
-def _load_product_nodes(session, off_parquet_path: Path, batch_size: int = 500) -> int:
+def _load_product_nodes(session, off_parquet_path: Path, batch_size: int = 500, max_products: Optional[int] = None) -> int:
     """Create Product nodes with OFF nutritional attributes."""
     import pandas as pd
 
@@ -61,6 +61,8 @@ def _load_product_nodes(session, off_parquet_path: Path, batch_size: int = 500) 
         return 0
 
     df = pd.read_parquet(off_parquet_path)
+    if max_products:
+        df = df.head(max_products)
     count = 0
     batch = []
 
@@ -107,6 +109,7 @@ def load_all(
     batch_size: int = 500,
     max_triples: Optional[int] = None,
     standardize: bool = True,
+    max_products: Optional[int] = None,
 ) -> None:
     """Main entry point: load products + triples into Neo4j."""
     driver = _get_driver()
@@ -116,7 +119,7 @@ def load_all(
         # Load product nodes from OFF
         with driver.session() as session:
             off_path = _PROCESSED / "off_enriched.parquet"
-            n_products = _load_product_nodes(session, off_path, batch_size=batch_size)
+            n_products = _load_product_nodes(session, off_path, batch_size=batch_size, max_products=max_products)
             logger.info("Loaded %d Product nodes from OFF", n_products)
 
         # Load SPO triples

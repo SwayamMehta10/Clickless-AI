@@ -23,12 +23,7 @@ playwright install chromium
 # 4. Ollama (Sol module — must be on a GPU compute node, not a login node)
 echo "--- Setting up Ollama ---"
 module load ollama/0.9.6   # `module avail ollama` for current versions
-
-# Start Ollama server if not running (use Sol's wrapper, not `ollama serve`)
-if ! pgrep -x "ollama" > /dev/null; then
-    ollama-start
-    echo "Ollama server started (stop with: ollama-stop)"
-fi
+ollama-start
 
 # Pull models
 echo "--- Pulling Ollama models ---"
@@ -42,12 +37,8 @@ NEO4J_SIF="/packages/apps/simg/neo4j_5.15.0-ubi8.sif"
 
 mkdir -p "$PROJ_DIR/data/neo4j_data" "$PROJ_DIR/data/neo4j_logs"
 
-echo "To start Neo4j, run:"
-echo "  apptainer run --writable-tmpfs \\"
-echo "    --bind '$PROJ_DIR/data/neo4j_data:/data' \\"
-echo "    --bind '$PROJ_DIR/data/neo4j_logs:/logs' \\"
-echo "    --env NEO4J_AUTH=neo4j/clickless123 \\"
-echo "    $NEO4J_SIF &"
+echo "To start Neo4j, copy-paste this single-line command:"
+echo "  apptainer run --writable-tmpfs --bind '$PROJ_DIR/data/neo4j_data:/data' --bind '$PROJ_DIR/data/neo4j_logs:/logs' --env NEO4J_AUTH=neo4j/clickless123 $NEO4J_SIF"
 echo "  # --writable-tmpfs is required so Neo4j can write to /var/lib/neo4j/conf at startup"
 
 # 6. .env file

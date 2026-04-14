@@ -58,10 +58,17 @@ def extract_triples_from_text(product_name: str, text: str) -> List[Tuple[str, s
             result = llm.generate_json(prompt=prompt, role="spo")
             if isinstance(result, list):
                 for triple in result:
+                    # Accept either [s, p, o] array form or {subject, predicate, object} dict form
                     if isinstance(triple, (list, tuple)) and len(triple) == 3:
                         s, p, o = [str(x).strip() for x in triple]
-                        if s and p and o:
-                            all_triples.append((s, p, o))
+                    elif isinstance(triple, dict):
+                        s = str(triple.get("subject") or triple.get("s") or "").strip()
+                        p = str(triple.get("predicate") or triple.get("p") or "").strip()
+                        o = str(triple.get("object") or triple.get("o") or "").strip()
+                    else:
+                        continue
+                    if s and p and o:
+                        all_triples.append((s, p, o))
         except ValueError as exc:
             logger.debug("Triple extraction failed for chunk: %s", exc)
 

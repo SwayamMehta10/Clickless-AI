@@ -101,17 +101,33 @@ def find_by_dietary_constraint(
 
 def get_product_subgraph(product_name: str, depth: int = 2) -> Dict:
     """Get nodes and relationships for a product's subgraph (for visualization)."""
-    query = """
-    MATCH path = (p:Product {name: $name})-[*1..$depth]-(neighbor)
+    depth = max(1, min(int(depth), 5))
+    product_query = f"""
+    MATCH path = (p:Product {{name: $name}})-[*1..{depth}]-(neighbor)
     RETURN nodes(path) AS nodes, relationships(path) AS rels
-    LIMIT 100
+    LIMIT 30
+    """
+    entity_query = """
+    MATCH (e:Entity)
+    WHERE toLower(e.name) CONTAINS toLower($name)
+    WITH e LIMIT 2
+    MATCH path = (e)-[r:RELATES]-(neighbor)
+    RETURN nodes(path) AS nodes, relationships(path) AS rels
+    LIMIT 25
+    """
+    fallback_query = """
+    MATCH (e:Entity)-[r:RELATES]-(n)
+    WITH e, count(r) AS deg ORDER BY deg DESC LIMIT 2
+    MATCH path = (e)-[:RELATES]-(neighbor)
+    RETURN nodes(path) AS nodes, relationships(path) AS rels
+    LIMIT 25
     """
     driver = _get_driver()
     nodes_seen = {}
     edges = []
-    with driver.session() as session:
-        result = session.run(query, name=product_name, depth=depth)
-        for record in result:
+
+    def _ingest(records):
+        for record in records:
             for node in record["nodes"]:
                 nid = node.element_id
                 if nid not in nodes_seen:
@@ -126,6 +142,18 @@ def get_product_subgraph(product_name: str, depth: int = 2) -> Dict:
                     "target": rel.end_node.element_id,
                     "predicate": rel.get("predicate", rel.type),
                 })
+
+    with driver.session() as session:
+        _ingest(list(session.run(product_query, name=product_name)))
+        if not nodes_seen:
+            # Try entity substring match using product name tokens
+            tokens = [t for t in product_name.split() if len(t) > 3]
+            for token in tokens:
+                _ingest(list(session.run(entity_query, name=token)))
+                if nodes_seen:
+                    break
+        if not nodes_seen:
+            _ingest(list(session.run(fallback_query)))
     return {"nodes": list(nodes_seen.values()), "edges": edges}
 
 

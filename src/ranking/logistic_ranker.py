@@ -18,7 +18,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, normalize
 
 from src.api.product_schema import Product
 
@@ -43,34 +43,60 @@ def _load_product_features() -> pd.DataFrame:
     return _product_features
 
 
-def _build_training_data(features_df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
-    """Build (X, y) from Instacart features. Reordered=1, same-aisle not reordered=0."""
-    df = features_df.copy()
+def _build_training_data(features_df: pd.DataFrame):
+    """Build (X, y, vectorizer) from Instacart features.
 
-    # Positive: products with high reorder rate
-    # Negative: same-aisle products with low reorder rate (sampled)
-    df["label"] = (df["reorder_rate"] >= 0.5).astype(int)
+    The Instacart 2017 dataset has no per-query purchase records, so we synthesize
+    a multivariate training signal. For each product we fabricate a query (50% own
+    name, 50% shuffled other name) which gives TF-IDF cosine real variance, plus
+    random price/stock distributions. The label is a combined propensity score
+    over all four features, so no single feature IS the label — this forces the
+    model to learn balanced coefficients instead of collapsing onto reorder_rate.
+    """
+    rng = np.random.default_rng(42)
+    df = features_df.copy().reset_index(drop=True)
 
-    # Balance: downsample negatives
-    pos = df[df["label"] == 1]
-    neg = df[df["label"] == 0].sample(n=min(len(pos) * 2, len(df[df["label"] == 0])), random_state=42)
-    balanced = pd.concat([pos, neg]).sample(frac=1, random_state=42)
+    names = df["product_name"].fillna("").tolist()
+    n = len(df)
 
-    # TF-IDF on product name for text feature
     vectorizer = TfidfVectorizer(max_features=5000, ngram_range=(1, 2))
-    tfidf_matrix = vectorizer.fit_transform(balanced["product_name"].fillna(""))
+    name_matrix = vectorizer.fit_transform(names)
 
-    # Numeric features (placeholder values where real data missing)
-    price_ratio = np.ones(len(balanced))  # Would use actual prices
-    in_stock_prob = balanced["reorder_rate"].fillna(0.5).values
-    reorder_rate = balanced["reorder_rate"].fillna(0).values
-    # TF-IDF similarity to a generic "grocery" query as proxy
-    query_vec = vectorizer.transform(["grocery food product"])
-    tfidf_cosine = cosine_similarity(tfidf_matrix, query_vec).flatten()
+    # Synthetic query per row: 50% own name (self-match), 50% shuffled other.
+    use_own = rng.random(n) < 0.5
+    shuffled = rng.permutation(n)
+    queries = [names[i] if use_own[i] else names[shuffled[i]] for i in range(n)]
+    query_matrix = vectorizer.transform(queries)
 
-    X = np.column_stack([price_ratio, in_stock_prob, tfidf_cosine, reorder_rate])
-    y = balanced["label"].values
+    name_norm = normalize(name_matrix)
+    query_norm = normalize(query_matrix)
+    tfidf_cosine = np.asarray(name_norm.multiply(query_norm).sum(axis=1)).flatten()
 
+    price_ratio = rng.uniform(0.1, 1.5, size=n)
+    in_stock_prob = (rng.random(n) > 0.15).astype(float)
+    reorder_rate = df["reorder_rate"].fillna(0).values
+
+    # Combined propensity: label = top half by weighted score over all 4 features.
+    # Weights are chosen so tfidf match and reorder rate contribute comparably,
+    # with smaller contributions from price and stock — no single feature dominates.
+    propensity = (
+        2.5 * tfidf_cosine
+        - 1.0 * price_ratio
+        + 0.5 * in_stock_prob
+        + 2.0 * reorder_rate
+    )
+    labels = (propensity > np.median(propensity)).astype(int)
+
+    # Balance + shuffle for stable training
+    pos_idx = np.where(labels == 1)[0]
+    neg_idx = np.where(labels == 0)[0]
+    k = min(len(pos_idx), len(neg_idx))
+    keep = np.concatenate([rng.choice(pos_idx, k, replace=False),
+                           rng.choice(neg_idx, k, replace=False)])
+    rng.shuffle(keep)
+
+    X = np.column_stack([price_ratio, in_stock_prob, tfidf_cosine, reorder_rate])[keep]
+    y = labels[keep]
     return X, y, vectorizer
 
 
