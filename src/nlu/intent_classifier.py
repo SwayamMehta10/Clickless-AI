@@ -10,6 +10,8 @@ import logging
 from typing import Tuple
 
 from src.llm import ollama_client as llm
+from src.nlu import demo_parser
+from src.utils.config import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +63,10 @@ _FEW_SHOT = [
 
 def classify(user_message: str, conversation_history: str = "") -> Tuple[str, float]:
     """Classify intent. Returns (intent_name, confidence)."""
+    app_cfg = get_settings().get("app", {})
+    if app_cfg.get("demo_mode", False):
+        return demo_parser.classify_intent(user_message, conversation_history)
+
     messages = [{"role": "system", "content": _SYSTEM_PROMPT}]
     messages.extend(_FEW_SHOT)
 
@@ -91,4 +97,4 @@ def classify(user_message: str, conversation_history: str = "") -> Tuple[str, fl
 
     except (ValueError, KeyError) as exc:
         logger.error("Intent classification failed: %s", exc)
-        return "chit_chat", 0.0
+        return demo_parser.classify_intent(user_message, conversation_history)

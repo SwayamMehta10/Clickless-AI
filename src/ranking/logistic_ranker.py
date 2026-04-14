@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import logging
 import pickle
-from pathlib import Path
 from typing import List, Optional, Tuple
 
 import numpy as np
@@ -21,10 +20,11 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, normalize
 
 from src.api.product_schema import Product
+from src.utils.paths import PROCESSED_DIR
 
 logger = logging.getLogger(__name__)
 
-_PROCESSED = Path("/scratch/smehta90/Clickless AI/data/processed")
+_PROCESSED = PROCESSED_DIR
 _MODEL_PATH = _PROCESSED / "logistic_ranker.pkl"
 
 _model: Optional[LogisticRegression] = None
@@ -122,7 +122,7 @@ def train(save: bool = True) -> None:
     )))
 
     if save:
-        _PROCESSED.mkdir(exist_ok=True)
+        _PROCESSED.mkdir(parents=True, exist_ok=True)
         with open(_MODEL_PATH, "wb") as f:
             pickle.dump({"model": clf, "tfidf": vectorizer, "scaler": scaler}, f)
         logger.info("Saved model to %s", _MODEL_PATH)
@@ -147,6 +147,42 @@ def _load_model() -> tuple:
     with open(_MODEL_PATH, "rb") as f:
         bundle = pickle.load(f)
     return bundle["model"], bundle["tfidf"], bundle.get("scaler")
+
+
+def _rank_products_fallback(
+    query: str,
+    candidates: List[Product],
+    user_budget: Optional[float],
+) -> List[Tuple[Product, float]]:
+    """Fallback ranking when training artifacts are unavailable locally."""
+    product_names = [p.name or "" for p in candidates]
+    vectorizer = TfidfVectorizer(ngram_range=(1, 2))
+    vectorizer.fit(product_names + [query])
+    query_vec = vectorizer.transform([query])
+
+    scored = []
+    for product in candidates:
+        product_vec = vectorizer.transform([product.name or ""])
+        text_score = float(cosine_similarity(product_vec, query_vec)[0][0])
+        reorder_score = float(product.reorder_rate or 0.3)
+        stock_score = 1.0 if product.availability else 0.0
+
+        if user_budget and product.price is not None:
+            budget_score = max(0.0, 1.0 - min(product.price / max(user_budget, 0.01), 2.0) / 2.0)
+        else:
+            budget_score = 0.5
+
+        score = (
+            0.5 * text_score
+            + 0.2 * reorder_score
+            + 0.2 * stock_score
+            + 0.1 * budget_score
+        )
+        scored.append((product, float(score)))
+
+    scored.sort(key=lambda x: x[1], reverse=True)
+    logger.warning("Using heuristic logistic-ranker fallback; training data is not available.")
+    return scored
 
 
 def _product_to_features(
@@ -182,7 +218,10 @@ def rank_products(
     if not candidates:
         return []
 
-    model, tfidf, scaler = _load_model()
+    try:
+        model, tfidf, scaler = _load_model()
+    except FileNotFoundError:
+        return _rank_products_fallback(query, candidates, user_budget)
 
     scored = []
     for product in candidates:

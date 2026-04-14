@@ -13,10 +13,15 @@ from __future__ import annotations
 import asyncio
 import csv
 import logging
+import sys
 import time
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from evaluation.metrics import (
     constraint_satisfaction_score,
@@ -30,7 +35,7 @@ from src.api.product_schema import RankedProduct
 
 logger = logging.getLogger(__name__)
 
-RESULTS_DIR = Path("/scratch/smehta90/Clickless AI/evaluation/results")
+RESULTS_DIR = PROJECT_ROOT / "evaluation" / "results"
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 

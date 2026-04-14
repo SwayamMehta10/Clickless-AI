@@ -7,16 +7,16 @@ from __future__ import annotations
 
 import logging
 import pickle
-from pathlib import Path
 from typing import Dict, List, Optional
 
 import pandas as pd
 from mlxtend.frequent_patterns import apriori, association_rules
 from mlxtend.preprocessing import TransactionEncoder
+from src.utils.paths import PROCESSED_DIR
 
 logger = logging.getLogger(__name__)
 
-_PROCESSED = Path("/scratch/smehta90/Clickless AI/data/processed")
+_PROCESSED = PROCESSED_DIR
 _RULES_PATH = _PROCESSED / "association_rules.pkl"
 
 _rules_cache: Optional[pd.DataFrame] = None
@@ -68,8 +68,12 @@ def _get_rules() -> pd.DataFrame:
             _rules_cache = pickle.load(f)
         logger.info("Loaded %d association rules from disk", len(_rules_cache))
     else:
-        logger.warning("No cached rules found -- mining now (this may take several minutes)...")
-        _rules_cache = mine_rules()
+        try:
+            logger.warning("No cached rules found -- mining now (this may take several minutes)...")
+            _rules_cache = mine_rules()
+        except FileNotFoundError:
+            logger.warning("No transaction data available; Apriori suggestions will be empty.")
+            _rules_cache = pd.DataFrame(columns=["antecedents", "consequents"])
 
     return _rules_cache
 
@@ -77,6 +81,8 @@ def _get_rules() -> pd.DataFrame:
 def get_copurchase_suggestions(product_name: str, top_k: int = 5) -> List[str]:
     """Return top-k products frequently bought with product_name."""
     rules = _get_rules()
+    if rules.empty:
+        return []
 
     # Find rules whose antecedents contain this product
     mask = rules["antecedents"].apply(lambda s: product_name in s)

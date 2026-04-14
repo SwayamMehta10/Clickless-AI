@@ -2,6 +2,7 @@ app:
   name: "ClickLess AI"
   version: "0.1.0"
   use_mock_api: true  # Set false when real Instacart API key is available
+  demo_mode: true
 
 instacart:
   base_url: "https://connect.dev.instacart.tools/idp/v1"
@@ -24,6 +25,14 @@ ollama:
     general: "llama3.2-vision:11b"
     vault: "llama3.2-vision:11b"
     vision: "llama3.2:90b-vision-instruct-q4_K_M"
+
+llm:
+  provider: "gemini"
+
+gemini:
+  base_url: "https://generativelanguage.googleapis.com/v1beta"
+  model: "gemini-2.5-flash"
+  timeout: 30
 
 ranking:
   apriori:

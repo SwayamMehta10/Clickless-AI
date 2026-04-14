@@ -10,17 +10,17 @@ import base64
 import json
 import logging
 import os
-from pathlib import Path
 from typing import Any, Dict, Optional
 
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from src.utils.paths import VAULT_PATH, VAULT_SALT_PATH
 
 logger = logging.getLogger(__name__)
 
-_VAULT_PATH = Path("/scratch/smehta90/Clickless AI/data/credential_store.enc")
-_SALT_PATH = Path("/scratch/smehta90/Clickless AI/data/.vault_salt")
+_VAULT_PATH = VAULT_PATH
+_SALT_PATH = VAULT_SALT_PATH
 
 
 def _derive_key(password: str, salt: bytes) -> bytes:

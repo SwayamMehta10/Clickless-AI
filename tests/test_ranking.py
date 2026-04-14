@@ -10,11 +10,11 @@ from src.api.product_schema import Product
 
 
 def _data_available() -> bool:
-    return (Path("/scratch/smehta90/Clickless AI/data/processed/transactions.pkl")).exists()
+    return (Path(__file__).resolve().parents[1] / "data" / "processed" / "transactions.pkl").exists()
 
 
 def _model_available() -> bool:
-    return (Path("/scratch/smehta90/Clickless AI/data/processed/logistic_ranker.pkl")).exists()
+    return (Path(__file__).resolve().parents[1] / "data" / "processed" / "logistic_ranker.pkl").exists()
 
 
 @pytest.mark.skipif(not _data_available(), reason="transactions.pkl not found -- run preprocess_instacart.py")

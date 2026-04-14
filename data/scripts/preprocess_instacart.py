@@ -7,9 +7,10 @@ from pathlib import Path
 
 import pandas as pd
 
-RAW = Path("/scratch/smehta90/Clickless AI/data/raw/instacart_2017")
-PROCESSED = Path("/scratch/smehta90/Clickless AI/data/processed")
-PROCESSED.mkdir(exist_ok=True)
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+RAW = PROJECT_ROOT / "data" / "raw" / "instacart_2017"
+PROCESSED = PROJECT_ROOT / "data" / "processed"
+PROCESSED.mkdir(parents=True, exist_ok=True)
 
 
 def load_raw() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:

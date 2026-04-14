@@ -1,56 +1,63 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
 
-PROJ_DIR="/scratch/smehta90/Clickless AI"
-SCRATCH="/scratch/smehta90"
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PYTHON_BIN="${PYTHON_BIN:-python3.11}"
+VENV_DIR="${VENV_DIR:-$PROJECT_ROOT/.venv}"
+
+if command -v pyenv >/dev/null 2>&1 && pyenv prefix 3.11.11 >/dev/null 2>&1; then
+  PYENV_311="$(pyenv prefix 3.11.11)/bin/python3.11"
+  if [ -x "$PYENV_311" ]; then
+    PYTHON_BIN="$PYENV_311"
+  fi
+fi
+
+if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+  PYTHON_BIN="python3"
+fi
 
 echo "=== ClickLess AI Setup ==="
+echo "Project root: $PROJECT_ROOT"
+echo "Python: $PYTHON_BIN"
 
-# 1. Python env
-echo "--- Python environment ---"
-module load mamba/latest
-source activate venv
+mkdir -p \
+  "$PROJECT_ROOT/data/raw" \
+  "$PROJECT_ROOT/data/processed" \
+  "$PROJECT_ROOT/data/neo4j_data" \
+  "$PROJECT_ROOT/data/neo4j_logs" \
+  "$PROJECT_ROOT/data/preferences" \
+  "$PROJECT_ROOT/evaluation/results"
 
-# 2. Install dependencies
+echo "--- Creating virtual environment ---"
+"$PYTHON_BIN" -m venv "$VENV_DIR"
+source "$VENV_DIR/bin/activate"
+
 echo "--- Installing Python packages ---"
-pip install -r "$PROJ_DIR/requirements.txt"
+python -m pip install --upgrade pip setuptools wheel
+python -m pip install -r "$PROJECT_ROOT/requirements.txt"
 
-# 3. Playwright browsers
-echo "--- Installing Playwright browsers ---"
-playwright install chromium
+echo "--- Installing Playwright browser ---"
+python -m playwright install chromium
 
-# 4. Ollama (Sol module — must be on a GPU compute node, not a login node)
-echo "--- Setting up Ollama ---"
-module load ollama/0.9.6   # `module avail ollama` for current versions
-ollama-start
-
-# Pull models
-echo "--- Pulling Ollama models ---"
-ollama pull mistral:7b
-ollama pull llama3.2-vision:11b
-echo "Skipping 90B model -- pull manually if needed: ollama pull llama3.2:90b-vision-instruct-q4_K_M"
-
-# 5. Neo4j via Apptainer (use Sol's prebuilt image at /packages/apps/simg/)
-echo "--- Setting up Neo4j ---"
-NEO4J_SIF="/packages/apps/simg/neo4j_5.15.0-ubi8.sif"
-
-mkdir -p "$PROJ_DIR/data/neo4j_data" "$PROJ_DIR/data/neo4j_logs"
-
-echo "To start Neo4j, copy-paste this single-line command:"
-echo "  apptainer run --writable-tmpfs --bind '$PROJ_DIR/data/neo4j_data:/data' --bind '$PROJ_DIR/data/neo4j_logs:/logs' --env NEO4J_AUTH=neo4j/clickless123 $NEO4J_SIF"
-echo "  # --writable-tmpfs is required so Neo4j can write to /var/lib/neo4j/conf at startup"
-
-# 6. .env file
-if [ ! -f "$PROJ_DIR/.env" ]; then
-    cp "$PROJ_DIR/.env.example" "$PROJ_DIR/.env"
-    echo "Created .env from .env.example -- fill in your API keys!"
+if [ ! -f "$PROJECT_ROOT/.env" ]; then
+  cp "$PROJECT_ROOT/.env.example" "$PROJECT_ROOT/.env"
+  echo "Created .env from .env.example"
 fi
 
 echo "=== Setup complete ==="
-echo "Next steps:"
-echo "  1. Edit .env with your Instacart API key"
-echo "  2. Download data: bash data/scripts/download_instacart.sh"
-echo "  3. Preprocess: python data/scripts/preprocess_instacart.py && python data/scripts/preprocess_off.py"
-echo "  4. Load KG: python -m src.knowledge_graph.neo4j_loader"
-echo "  5. Launch: streamlit run src/ui/app.py --server.port=8501"
+echo "Activate the environment with:"
+echo "  source \"$VENV_DIR/bin/activate\""
+echo
+echo "Optional next steps:"
+echo "  1. Download datasets:"
+echo "     bash data/scripts/download_instacart.sh"
+echo "     bash data/scripts/download_openfoodfacts.sh"
+echo "  2. Preprocess data:"
+echo "     python data/scripts/preprocess_instacart.py"
+echo "     python data/scripts/preprocess_off.py"
+echo "  3. Start local services if you want full LLM/KG features:"
+echo "     ollama serve"
+echo "     docker run --name clickless-neo4j -p 7474:7474 -p 7687:7687 -e NEO4J_AUTH=neo4j/clickless123 neo4j:5"
+echo "  4. Launch the app:"
+echo "     streamlit run src/ui/app.py --server.port=8501"

@@ -13,10 +13,11 @@ from typing import Iterator, List, Tuple
 import pandas as pd
 
 from src.llm import ollama_client as llm
+from src.utils.paths import PROCESSED_DIR
 
 logger = logging.getLogger(__name__)
 
-_PROCESSED = Path("/scratch/smehta90/Clickless AI/data/processed")
+_PROCESSED = PROCESSED_DIR
 _TRIPLES_PATH = _PROCESSED / "triples.jsonl"
 
 _EXTRACT_PROMPT = """\

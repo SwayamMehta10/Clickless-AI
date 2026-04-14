@@ -4,7 +4,8 @@
 
 set -e
 
-DEST="/scratch/smehta90/Clickless AI/data/raw/instacart_2017"
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+DEST="$PROJECT_ROOT/data/raw/instacart_2017"
 mkdir -p "$DEST"
 
 echo "Downloading Instacart Online Grocery Shopping 2017..."

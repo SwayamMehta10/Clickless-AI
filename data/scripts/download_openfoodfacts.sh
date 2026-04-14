@@ -3,7 +3,8 @@
 
 set -e
 
-DEST="/scratch/smehta90/Clickless AI/data/raw/openfoodfacts"
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+DEST="$PROJECT_ROOT/data/raw/openfoodfacts"
 mkdir -p "$DEST"
 
 OFF_URL="https://static.openfoodfacts.org/data/en.openfoodfacts.org.products.csv.gz"

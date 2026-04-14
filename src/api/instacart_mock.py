@@ -7,18 +7,19 @@ Implements the same interface as InstacartClient.
 from __future__ import annotations
 
 import logging
+import os
 import random
 import re
-from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
 from src.api.product_schema import CartItem, NutriScore, NovaGroup, Product
+from src.utils.paths import PROCESSED_DIR
 
 logger = logging.getLogger(__name__)
 
-_PROCESSED = Path("/scratch/smehta90/Clickless AI/data/processed")
+_PROCESSED = PROCESSED_DIR
 
 _instacart_df: Optional[pd.DataFrame] = None
 _off_df: Optional[pd.DataFrame] = None
@@ -228,5 +229,3 @@ def get_client():
     logger.info("Using real InstacartClient")
     return InstacartClient()
 
-
-import os

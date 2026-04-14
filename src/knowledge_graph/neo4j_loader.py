@@ -16,10 +16,11 @@ from neo4j import GraphDatabase, Driver
 from src.knowledge_graph.spo_extractor import load_triples
 from src.knowledge_graph.entity_standardizer import standardize_triples
 from src.utils.config import get_settings
+from src.utils.paths import PROCESSED_DIR
 
 logger = logging.getLogger(__name__)
 
-_PROCESSED = Path("/scratch/smehta90/Clickless AI/data/processed")
+_PROCESSED = PROCESSED_DIR
 
 
 def _get_driver() -> Driver:

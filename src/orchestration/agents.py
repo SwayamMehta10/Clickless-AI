@@ -14,11 +14,13 @@ from langchain_core.messages import AIMessage, HumanMessage
 
 from src.api.instacart_mock import get_client
 from src.api.product_schema import CartItem
+from src.llm import gemini_client
 from src.llm import ollama_client as llm
 from src.nlu import intent_classifier, slot_filler
 from src.nlu.dialogue_state import DialogueState, Slots
 from src.orchestration.state import AgentState
 from src.ranking.kg_ranker import rank_with_kg
+from src.utils.config import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -192,12 +194,55 @@ Keep response under 3 sentences. Mention specific product names and prices when 
 If there was an error, acknowledge it and suggest what the user can try.
 """
 
+_DEMO_RESPONSE_SYSTEM = """\
+You are the voice of a grocery-shopping demo.
+Keep responses crisp, warm, and specific.
+Do not mention internal systems, mock APIs, rankings, or hidden implementation details.
+Prefer 1-2 short sentences.
+"""
+
+
+def _template_response(ds: DialogueState, ranked, error: str | None, checkout_ready: bool) -> str:
+    if error:
+        return f"I hit a snag: {error} Try one of the sample prompts or rephrase the item."
+    if checkout_ready:
+        return "Your demo cart is ready. In a full flow, this would hand off to checkout."
+    if ds.current_intent == "add_to_cart" and ds.cart:
+        item = ds.cart[-1]
+        return f"Added {item.product.name} to your cart. You can keep shopping or go to checkout."
+    if ds.current_intent == "remove_from_cart":
+        return "I updated your cart."
+    if ranked:
+        lead = ranked[0].product
+        price = f"${lead.price:.2f}" if lead.price is not None else "price unavailable"
+        return f"My top pick is {lead.name} at {price}. I also surfaced a couple of similar options to compare."
+    if ds.current_intent == "checkout":
+        return "Your cart looks ready for checkout."
+    return "Tell me what grocery item you need and I’ll surface a few strong options."
+
+
+def _generate_demo_response(prompt: str, *, fallback: str) -> str:
+    provider = get_settings().get("llm", {}).get("provider", "gemini")
+    if provider == "gemini" and gemini_client.is_configured():
+        try:
+            return gemini_client.generate(
+                prompt,
+                system_instruction=_DEMO_RESPONSE_SYSTEM,
+                temperature=0.4,
+                max_output_tokens=180,
+            )
+        except Exception as exc:
+            logger.warning("Gemini demo response failed: %s", exc)
+    return fallback
+
 
 def response_generator(state: AgentState) -> AgentState:
     """Generate a natural language response for the user."""
     ds: DialogueState = state["dialogue_state"]
     ranked = state.get("ranked_results", [])
     error = state.get("error")
+    checkout_ready = state.get("checkout_ready", False)
+    demo_mode = get_settings().get("app", {}).get("demo_mode", False)
 
     # Format top results for prompt
     top_results = []
@@ -219,17 +264,28 @@ def response_generator(state: AgentState) -> AgentState:
         error=error or "none",
     )
 
-    try:
-        response = llm.generate(prompt, role="general")
-    except Exception as exc:
-        logger.error("Response generation failed: %s", exc)
-        if error:
-            response = f"I encountered an issue: {error}"
-        elif ranked:
-            top = ranked[0].product
-            response = f"I found {len(ranked)} products. Top result: {top.name} at ${top.price:.2f}."
-        else:
-            response = "I'm here to help with your grocery shopping! What are you looking for?"
+    if demo_mode:
+        demo_prompt = f"""\
+User intent: {ds.current_intent}
+Parsed preferences: {ds.slots.model_dump()}
+Cart items: {cart_summary}
+Checkout ready: {checkout_ready}
+Error: {error or 'none'}
+Top options:
+{"; ".join(top_results) or "none"}
+
+Write the next assistant reply for the grocery-shopping demo.
+"""
+        response = _generate_demo_response(
+            demo_prompt,
+            fallback=_template_response(ds, ranked, error, checkout_ready),
+        )
+    else:
+        try:
+            response = llm.generate(prompt, role="general")
+        except Exception as exc:
+            logger.error("Response generation failed: %s", exc)
+            response = _template_response(ds, ranked, error, checkout_ready)
 
     ds.add_turn("assistant", response)
     return {**state, "response_text": response, "dialogue_state": ds,

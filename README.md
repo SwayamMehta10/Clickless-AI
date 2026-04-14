@@ -28,47 +28,35 @@ LangGraph Orchestration (ReAct)
 Streamlit UI ──► Browser Checkout (BrowserUse + Playwright)
 ```
 
-## Quick Start
+## Local Quick Start
 
 ```bash
-# 1. Activate environment (Sol HPC)
-module load mamba/latest
-source activate venv
-export PROJ_DIR="/scratch/smehta90/Clickless AI"
-cd "$PROJ_DIR"
+./setup.sh
+source .venv/bin/activate
 
-# 2. Copy and fill in credentials
-cp .env.example .env
-
-# 3. Start Neo4j (via Apptainer, using Sol's shared image)
-mkdir -p data/neo4j_data data/neo4j_logs
-apptainer run --writable-tmpfs \
-  --bind "$PWD/data/neo4j_data:/data" \
-  --bind "$PWD/data/neo4j_logs:/logs" \
-  --env NEO4J_AUTH=neo4j/clickless123 \
-  /packages/apps/simg/neo4j_5.15.0-ubi8.sif &
-# Bolt: localhost:7687 | HTTP: localhost:7474 | user: neo4j / pass: clickless123
-# `--writable-tmpfs` is required: Neo4j's entrypoint writes to /var/lib/neo4j/conf
-# at startup, and Apptainer mounts the image read-only without it.
-
-# 4. Start Ollama (on GPU node, via Sol module)
-module load ollama/0.9.6      # see `module avail ollama` for current versions
-ollama-start                  # Sol wrapper; use `ollama-stop` to shut down
-ollama pull mistral:7b           # ~4 GB, NLU + SPO extraction
-ollama pull llama3.2-vision:11b  # ~7.9 GB, vault + simple queries + vision
-
-# 5. Download + preprocess data (one-time)
+# Download and preprocess data if you want the full dataset-backed experience
 bash data/scripts/download_instacart.sh
 bash data/scripts/download_openfoodfacts.sh
 python data/scripts/preprocess_instacart.py
 python data/scripts/preprocess_off.py
 
-# 6. Load knowledge graph
+# Optional: start local services for full LLM + KG support
+ollama serve
+docker run --name clickless-neo4j -p 7474:7474 -p 7687:7687 \
+  -e NEO4J_AUTH=neo4j/clickless123 neo4j:5
+
+# Optional: load the knowledge graph once Neo4j is running
 python -m src.knowledge_graph.neo4j_loader
 
-# 7. Launch UI
+# Launch the app
 streamlit run src/ui/app.py --server.port=8501
 ```
+
+Without the downloaded datasets, the app still boots and uses fallback mock products for basic local smoke testing. Ollama and Neo4j are only needed for the full LLM-powered and knowledge-graph features.
+
+## Sol HPC Notes
+
+The original demo flow for Sol HPC is documented in `RUNBOOK.md` and `STEPS.md`.
 
 ## SSH Port Forwarding (Sol → Local Browser)
 

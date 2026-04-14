@@ -10,10 +10,16 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import sys
 import uuid
+from pathlib import Path
 from typing import Optional
 
 import streamlit as st
+
+_PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
 
 from src.api.product_schema import CartItem, RankedProduct
 from src.nlu.dialogue_state import DialogueState
@@ -21,9 +27,18 @@ from src.orchestration.graph_builder import run_pipeline
 from src.ui.components.cart import render_cart
 from src.ui.components.chat import render_results
 from src.ui.components.kg_viz import render_kg_panel
+from src.utils.config import get_settings
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+_SETTINGS = get_settings()
+_DEMO_MODE = _SETTINGS.get("app", {}).get("demo_mode", False)
+_DEMO_PROMPTS = [
+    ("Bread under $5", "I need gluten-free bread under $5"),
+    ("Organic milk", "Show me organic milk under $6"),
+    ("Party snacks", "Recommend party snacks under $20"),
+    ("Low-sodium broth", "Find low-sodium chicken broth"),
+]
 
 st.set_page_config(
     page_title="ClickLess AI",
@@ -124,7 +139,16 @@ if st.session_state.checkout_triggered:
 # ---------------------------------------------------------------------------
 
 st.title("ClickLess AI")
-st.caption("Describe what you need and I'll find the best options for you.")
+if _DEMO_MODE:
+    st.caption("Demo mode: local mock catalog with polished AI responses.")
+    prompt_cols = st.columns(len(_DEMO_PROMPTS))
+    selected_demo_prompt = None
+    for idx, (label, prompt_text) in enumerate(_DEMO_PROMPTS):
+        if prompt_cols[idx].button(label, use_container_width=True):
+            selected_demo_prompt = prompt_text
+else:
+    st.caption("Describe what you need and I'll find the best options for you.")
+    selected_demo_prompt = None
 
 # Render conversation history
 for msg in st.session_state.messages:
@@ -140,12 +164,11 @@ for msg in st.session_state.messages:
             render_results(msg["results"], on_add=_add_handler)
 
 # KG visualization expander
-if st.session_state.selected_product:
+if st.session_state.selected_product and not _DEMO_MODE:
     with st.expander(f"Knowledge Graph: {st.session_state.selected_product}", expanded=False):
         render_kg_panel(st.session_state.selected_product)
 
-# Chat input
-if prompt := st.chat_input("e.g. 'I need gluten-free bread under $5'"):
+def _run_user_prompt(prompt: str) -> None:
     # Display user message
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
@@ -175,7 +198,7 @@ if prompt := st.chat_input("e.g. 'I need gluten-free bread under $5'"):
                         st.session_state.selected_product = rp.product.name
                         st.rerun()
 
-                    render_results(ranked[:5], on_add=_add_handler_live)
+                    render_results(ranked[:3] if _DEMO_MODE else ranked[:5], on_add=_add_handler_live)
 
                 if error:
                     st.warning(f"Note: {error}")
@@ -183,7 +206,7 @@ if prompt := st.chat_input("e.g. 'I need gluten-free bread under $5'"):
                 st.session_state.messages.append({
                     "role": "assistant",
                     "content": response,
-                    "results": ranked[:5] if ranked else [],
+                    "results": (ranked[:3] if _DEMO_MODE else ranked[:5]) if ranked else [],
                 })
                 st.session_state.ranked_results = ranked
 
@@ -192,3 +215,10 @@ if prompt := st.chat_input("e.g. 'I need gluten-free bread under $5'"):
                 error_msg = f"Something went wrong: {exc}"
                 st.error(error_msg)
                 st.session_state.messages.append({"role": "assistant", "content": error_msg})
+
+
+# Chat input
+if selected_demo_prompt:
+    _run_user_prompt(selected_demo_prompt)
+elif prompt := st.chat_input("e.g. 'I need gluten-free bread under $5'"):
+    _run_user_prompt(prompt)

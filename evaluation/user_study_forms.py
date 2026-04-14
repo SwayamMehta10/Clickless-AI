@@ -12,7 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
-RESULTS_DIR = Path("/scratch/smehta90/Clickless AI/evaluation/results/user_study")
+RESULTS_DIR = Path(__file__).resolve().parents[1] / "evaluation" / "results" / "user_study"
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 

@@ -8,7 +8,9 @@ from __future__ import annotations
 import logging
 
 from src.llm import ollama_client as llm
+from src.nlu import demo_parser
 from src.nlu.dialogue_state import Slots
+from src.utils.config import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +60,10 @@ _FEW_SHOT_PAIRS = [
 
 def extract_slots(user_message: str, conversation_history: str = "") -> Slots:
     """Extract slots from user message. Returns a Slots instance."""
+    app_cfg = get_settings().get("app", {})
+    if app_cfg.get("demo_mode", False):
+        return demo_parser.extract_slots(user_message, conversation_history)
+
     # Build few-shot prompt
     few_shot_text = "\n".join(
         f"User: {u}\nSlots: {s}" for u, s in _FEW_SHOT_PAIRS
@@ -96,7 +102,7 @@ def extract_slots(user_message: str, conversation_history: str = "") -> Slots:
 
     except (ValueError, KeyError) as exc:
         logger.error("Slot extraction failed: %s", exc)
-        return Slots()
+        return demo_parser.extract_slots(user_message, conversation_history)
 
 
 def merge_slots(existing: Slots, new: Slots) -> Slots:

@@ -12,14 +12,14 @@ from __future__ import annotations
 
 import json
 import logging
-from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from src.api.product_schema import CartItem, Product
+from src.utils.paths import PREFERENCES_DIR
 
 logger = logging.getLogger(__name__)
 
-_PREF_DIR = Path("/scratch/smehta90/Clickless AI/data/preferences")
+_PREF_DIR = PREFERENCES_DIR
 _PREF_DIR.mkdir(parents=True, exist_ok=True)
 
 

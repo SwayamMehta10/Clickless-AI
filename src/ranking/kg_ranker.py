@@ -76,6 +76,7 @@ def rank_with_kg(
 
     cfg = get_settings()
     w = weights or cfg["ranking"]["kg_ranker"]["weights"]
+    demo_mode = cfg.get("app", {}).get("demo_mode", False)
 
     # 1. Logistic scores
     logistic_scored = logistic_rank(query, candidates, user_budget)
@@ -99,13 +100,16 @@ def rank_with_kg(
         # Compute component scores
         logistic = logistic_map.get(product.instacart_id, 0.5)
         nutrition = _nutrition_score(product, dietary_flags)
-        apriori = _apriori_score(product, cart_item_names)
+        apriori = 0.5 if demo_mode else _apriori_score(product, cart_item_names)
 
         # GraphRAG relevance (skip if KG unavailable to keep latency low)
-        try:
-            graphrag = get_relevance_score(product.name or "", query, dietary_flags)
-        except Exception:
-            graphrag = 0.3
+        if demo_mode:
+            graphrag = 0.5
+        else:
+            try:
+                graphrag = get_relevance_score(product.name or "", query, dietary_flags)
+            except Exception:
+                graphrag = 0.3
 
         composite = (
             w["logistic_score"] * logistic
