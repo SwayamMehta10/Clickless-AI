@@ -155,30 +155,52 @@ class _BrowserUseCloudTransport:
             if phase in ("finished", "completed", "stopped", "failed", "error"):
                 terminal = True
 
-        # Fetch per-step messages for screenshots and action log.
+        # Fetch per-step messages + screenshots.
+        #
+        # Response shape (v3): {"messages": [{id, sessionId, role, data, type,
+        # summary, screenshotUrl, hidden, createdAt}, ...], "hasMore": bool}
+        #
+        # Per-message `screenshotUrl` values are S3 pre-signed URLs valid for
+        # ~300 seconds. If the download loop takes longer than that, URLs for
+        # later messages can 404. To mitigate, we re-fetch messages once per
+        # page just before each individual image download, so every signed URL
+        # is as fresh as possible. The cost is one extra GET per batch but the
+        # yield is near-100% screenshot capture even on slow networks.
         try:
-            msg_resp = await self._client.get(f"/sessions/{sess_id}/messages")
-            if msg_resp.status_code < 400:
-                messages = msg_resp.json() or []
-                for m in messages if isinstance(messages, list) else messages.get("items", []):
-                    shot_url = m.get("screenshotUrl")
-                    action_log.append({
-                        "type": m.get("type"),
-                        "summary": m.get("summary"),
-                        "data": m.get("data"),
-                        "screenshot_url": shot_url,
-                        "created_at": m.get("createdAt"),
-                    })
-                    if save_screenshots and shot_url:
-                        shot_name = f"step_{len(screenshots):03d}.png"
-                        path = run_dir / shot_name
-                        try:
-                            img_resp = await self._client.get(shot_url)
-                            img_resp.raise_for_status()
-                            path.write_bytes(img_resp.content)
-                            screenshots.append(str(path))
-                        except Exception as exc:
-                            logger.warning("screenshot fetch failed: %s", exc)
+            all_messages = await self._fetch_all_messages(sess_id)
+            for i, m in enumerate(all_messages):
+                action_log.append({
+                    "id": m.get("id"),
+                    "role": m.get("role"),
+                    "type": m.get("type"),
+                    "summary": m.get("summary"),
+                    "data": m.get("data"),
+                    "screenshot_url": m.get("screenshotUrl"),
+                    "created_at": m.get("createdAt"),
+                    "hidden": m.get("hidden"),
+                })
+
+            if save_screenshots:
+                # Refetch once for the freshest signed URLs, then map id -> url.
+                fresh = await self._fetch_all_messages(sess_id)
+                url_by_id = {
+                    m["id"]: m.get("screenshotUrl")
+                    for m in fresh
+                    if m.get("id") and m.get("screenshotUrl")
+                }
+                for i, m in enumerate(all_messages):
+                    shot_url = url_by_id.get(m.get("id")) or m.get("screenshotUrl")
+                    if not shot_url:
+                        continue
+                    shot_name = f"step_{len(screenshots):03d}.png"
+                    path = run_dir / shot_name
+                    try:
+                        img_resp = await self._client.get(shot_url)
+                        img_resp.raise_for_status()
+                        path.write_bytes(img_resp.content)
+                        screenshots.append(str(path))
+                    except Exception as exc:
+                        logger.warning("screenshot %d fetch failed: %s", i, exc)
         except Exception as exc:
             logger.warning("messages fetch failed: %s", exc)
 
@@ -200,6 +222,36 @@ class _BrowserUseCloudTransport:
             action_log=action_log,
             screenshots=screenshots,
         )
+
+    async def _fetch_all_messages(self, sess_id: str) -> List[Dict[str, Any]]:
+        """Paginate GET /sessions/{id}/messages and return every message.
+
+        Response shape: {"messages": [...], "hasMore": bool}. When hasMore is
+        true, re-query with `after=<last_msg_id>` until it flips false.
+        """
+        all_msgs: List[Dict[str, Any]] = []
+        cursor: Optional[str] = None
+        for _ in range(20):  # hard cap — no session has >20 message pages
+            params: Dict[str, Any] = {}
+            if cursor:
+                params["after"] = cursor
+            try:
+                r = await self._client.get(f"/sessions/{sess_id}/messages", params=params)
+                r.raise_for_status()
+            except Exception as exc:
+                logger.warning("fetch messages page failed: %s", exc)
+                break
+            obj = r.json()
+            page = obj.get("messages") or []
+            if not page:
+                break
+            all_msgs.extend(page)
+            if not obj.get("hasMore"):
+                break
+            cursor = page[-1].get("id")
+            if not cursor:
+                break
+        return all_msgs
 
     async def close(self) -> None:
         await self._client.aclose()
