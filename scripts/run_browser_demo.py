@@ -98,13 +98,41 @@ async def _run_one(spec: dict) -> dict:
     return {"scenario": spec, "cart_size": len(cart), "result": result}
 
 
-async def _run_all(selected: List[str]) -> dict:
+def _scenario_already_done(spec: dict) -> bool:
+    """Resume-safe check: a scenario is considered done if its own manifest
+    already exists on disk and reports success=True."""
+    mf = _ARTIFACTS / spec["id"] / "manifest.json"
+    if not mf.exists():
+        return False
+    try:
+        obj = json.loads(mf.read_text())
+        return bool(obj.get("success"))
+    except Exception:
+        return False
+
+
+def _load_existing_run(spec: dict) -> dict:
+    mf = _ARTIFACTS / spec["id"] / "manifest.json"
+    obj = json.loads(mf.read_text())
+    return {
+        "scenario": spec,
+        "cart_size": len(obj.get("items", [])),
+        "result": obj,
+        "resumed": True,
+    }
+
+
+async def _run_all(selected: List[str], force: bool = False) -> dict:
     if "all" in selected:
         specs = SCENARIO_SPECS
     else:
         specs = [s for s in SCENARIO_SPECS if s["id"] in selected]
     runs = []
     for spec in specs:
+        if not force and _scenario_already_done(spec):
+            logger.info("skip %s (already complete)", spec["id"])
+            runs.append(_load_existing_run(spec))
+            continue
         try:
             run = await _run_one(spec)
         except Exception as exc:
@@ -123,9 +151,11 @@ async def _run_all(selected: List[str]) -> dict:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--scenarios", nargs="+", default=["all"])
+    parser.add_argument("--force", action="store_true",
+                        help="Rerun scenarios even if a success manifest exists.")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
-    manifest = asyncio.run(_run_all(args.scenarios))
+    manifest = asyncio.run(_run_all(args.scenarios, force=args.force))
     print(json.dumps({"n": manifest["n_scenarios"], "n_success": manifest["n_success"]}, indent=2))
     print(f"Artifacts in: {_ARTIFACTS}")
 
