@@ -1,0 +1,29 @@
+{
+  "timestamp": "20260414_221634",
+  "configs": {
+    "A": {
+      "n": 50,
+      "tsr": 1.0,
+      "mean_css": 1.0,
+      "mean_ndcg5": 0.9043,
+      "mean_ttfo_sec": 86.3284,
+      "mean_clicks_saved": 32.16
+    },
+    "B": {
+      "n": 50,
+      "tsr": 1.0,
+      "mean_css": 1.0,
+      "mean_ndcg5": 0.8287,
+      "mean_ttfo_sec": 86.3284,
+      "mean_clicks_saved": 32.16
+    },
+    "C": {
+      "n": 50,
+      "tsr": 1.0,
+      "mean_css": 1.0,
+      "mean_ndcg5": 0.8516,
+      "mean_ttfo_sec": 86.3284,
+      "mean_clicks_saved": 32.16
+    }
+  }
+}

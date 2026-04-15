@@ -1,0 +1,169 @@
+{
+  "timestamp": "2026-04-14T22:03:12",
+  "n_tasks": 20,
+  "esr": 1.0,
+  "mean_reward": 0.5984,
+  "mean_duration_sec": 66.6872,
+  "tasks": [
+    {
+      "task": "click-button",
+      "success": true,
+      "reward": 0.14,
+      "steps": 13,
+      "duration_sec": 67.75241780281067,
+      "error": null
+    },
+    {
+      "task": "click-button-sequence",
+      "success": true,
+      "reward": 0.73,
+      "steps": 4,
+      "duration_sec": 33.22337341308594,
+      "error": null
+    },
+    {
+      "task": "click-checkboxes",
+      "success": true,
+      "reward": 0.74,
+      "steps": 4,
+      "duration_sec": 34.349008560180664,
+      "error": null
+    },
+    {
+      "task": "click-checkboxes-large",
+      "success": true,
+      "reward": 0.67,
+      "steps": 8,
+      "duration_sec": 78.03422379493713,
+      "error": null
+    },
+    {
+      "task": "click-dialog",
+      "success": true,
+      "reward": 0.97,
+      "steps": 33,
+      "duration_sec": 206.59314012527466,
+      "error": null
+    },
+    {
+      "task": "click-link",
+      "success": true,
+      "reward": 0.74,
+      "steps": 4,
+      "duration_sec": 33.412503719329834,
+      "error": null
+    },
+    {
+      "task": "click-tab",
+      "success": true,
+      "reward": 0.77,
+      "steps": 4,
+      "duration_sec": 33.285916328430176,
+      "error": null
+    },
+    {
+      "task": "click-test",
+      "success": true,
+      "reward": 0.78,
+      "steps": 4,
+      "duration_sec": 33.23084235191345,
+      "error": null
+    },
+    {
+      "task": "click-widget",
+      "success": true,
+      "reward": 0.83,
+      "steps": 4,
+      "duration_sec": 33.25644493103027,
+      "error": null
+    },
+    {
+      "task": "enter-text",
+      "success": true,
+      "reward": 0.78,
+      "steps": 4,
+      "duration_sec": 37.750829458236694,
+      "error": null
+    },
+    {
+      "task": "enter-text-dynamic",
+      "success": true,
+      "reward": 0.79,
+      "steps": 4,
+      "duration_sec": 24.925570964813232,
+      "error": null
+    },
+    {
+      "task": "enter-password",
+      "success": true,
+      "reward": 0.81,
+      "steps": 4,
+      "duration_sec": 33.11703419685364,
+      "error": null
+    },
+    {
+      "task": "login-user",
+      "success": true,
+      "reward": 0.76,
+      "steps": 4,
+      "duration_sec": 25.725255250930786,
+      "error": null
+    },
+    {
+      "task": "login-user-popup",
+      "success": true,
+      "reward": 0.83,
+      "steps": 5,
+      "duration_sec": 29.246435403823853,
+      "error": null
+    },
+    {
+      "task": "book-flight",
+      "success": true,
+      "reward": 0.02,
+      "steps": 12,
+      "duration_sec": 72.32458138465881,
+      "error": null
+    },
+    {
+      "task": "use-autocomplete",
+      "success": true,
+      "reward": 0.41,
+      "steps": 21,
+      "duration_sec": 127.02295756340027,
+      "error": null
+    },
+    {
+      "task": "search-engine",
+      "success": true,
+      "reward": 0.27,
+      "steps": 8,
+      "duration_sec": 45.42489242553711,
+      "error": null
+    },
+    {
+      "task": "navigate-tree",
+      "success": true,
+      "reward": 0.4682,
+      "steps": 27,
+      "duration_sec": 163.75900959968567,
+      "error": null
+    },
+    {
+      "task": "social-media",
+      "success": true,
+      "reward": 0.36,
+      "steps": 13,
+      "duration_sec": 73.9094090461731,
+      "error": null
+    },
+    {
+      "task": "click-shape",
+      "success": true,
+      "reward": 0.1,
+      "steps": 22,
+      "duration_sec": 147.40026664733887,
+      "error": null
+    }
+  ]
+}

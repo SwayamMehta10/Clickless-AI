@@ -1,0 +1,40 @@
+{
+  "cases": [
+    {
+      "case": "out_of_stock_substitution",
+      "passed": 1,
+      "total": 1,
+      "rate": 1.0,
+      "notes": [
+        "substituted=2% Milk"
+      ]
+    },
+    {
+      "case": "price_change_between_query_and_checkout",
+      "passed": 1,
+      "total": 1,
+      "rate": 1.0,
+      "notes": [
+        "queried=3.99 latest=6.49"
+      ]
+    },
+    {
+      "case": "malformed_api_response",
+      "passed": 1,
+      "total": 1,
+      "rate": 1.0,
+      "notes": [
+        "malformed JSON: unexpected EOF"
+      ]
+    },
+    {
+      "case": "captcha_encounter_browser_handoff",
+      "passed": 1,
+      "total": 1,
+      "rate": 1.0,
+      "notes": [
+        "halted=True error=captcha_detected"
+      ]
+    }
+  ]
+}

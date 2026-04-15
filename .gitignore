@@ -13,9 +13,10 @@ data/neo4j_logs/
 .ipynb_checkpoints/
 notebooks/*.ipynb
 
-# Evaluation results
+# Evaluation results — JSONs are now committed as paper artifacts; exclude only
+# the CSV mirrors and any bulk miniwob run subfolders.
 evaluation/results/*.csv
-evaluation/results/*.json
+evaluation/results/miniwob_runs/
 
 # Proposal
 # Project Proposal.pdf

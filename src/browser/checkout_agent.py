@@ -42,7 +42,8 @@ from src.llm.session_manager import SessionManager
 logger = logging.getLogger(__name__)
 
 
-_BROWSERUSE_BASE_URL = "https://api.browser-use.com/api/v1"
+_BROWSERUSE_BASE_URL = "https://api.browser-use.com/api/v3"
+_BROWSERUSE_CLOUD_MODEL = os.getenv("BROWSERUSE_CLOUD_MODEL", "bu-max")
 _ARTIFACTS_DIR = Path("/scratch/smehta90/Clickless AI/artifacts/checkout")
 _ARTIFACTS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -65,11 +66,28 @@ class CheckoutResult:
 # ---------------------------------------------------------------------------
 
 class _BrowserUseCloudTransport:
+    """Wrapper around Browser Use Cloud API v3.
+
+    Per https://docs.browser-use.com/cloud/api-reference :
+      POST /api/v3/sessions        — create a new agent session
+      GET  /api/v3/sessions/{id}   — poll status + stepCount + isTaskSuccessful + output
+      GET  /api/v3/sessions/{id}/messages — per-step screenshot URLs + summaries
+
+    v3 does not accept inline browser cookies on POST. To carry a user
+    session into the cloud Chromium, create a persistent browser profile via
+    the /profiles endpoint out-of-band and pass its id as profileId. For the
+    ClickLess checkout demo we create the profile on first run and cache its
+    UUID to ~/.clickless/browseruse_profile.json.
+    """
+
     def __init__(self, api_key: str) -> None:
         self._api_key = api_key
         self._client = httpx.AsyncClient(
             base_url=_BROWSERUSE_BASE_URL,
-            headers={"Authorization": f"Bearer {api_key}"},
+            headers={
+                "X-Browser-Use-API-Key": api_key,
+                "Content-Type": "application/json",
+            },
             timeout=120,
         )
 
@@ -80,77 +98,99 @@ class _BrowserUseCloudTransport:
         run_dir: Path,
         save_screenshots: bool = True,
     ) -> CheckoutResult:
-        payload = {
-            "task": task,
-            "save_browser_data": True,
-            "use_adblock": True,
-            "use_proxy": True,
-            "structured_output_json": json.dumps({
-                "type": "object",
-                "properties": {
-                    "items_added": {"type": "integer"},
-                    "cart_url": {"type": "string"},
-                    "stopped_at": {"type": "string"},
-                },
-                "required": ["items_added", "stopped_at"],
-            }),
-            "browser_cookies": cookies,
+        output_schema = {
+            "type": "object",
+            "properties": {
+                "items_added": {"type": "integer"},
+                "cart_url": {"type": "string"},
+                "stopped_at": {"type": "string"},
+            },
+            "required": ["items_added", "stopped_at"],
         }
 
-        resp = await self._client.post("/run-task", json=payload)
-        resp.raise_for_status()
-        task_record = resp.json()
-        task_id = task_record.get("id") or task_record.get("task_id")
-        live_url = task_record.get("live_url")
-        logger.info("Browser Use Cloud task created: id=%s live_url=%s", task_id, live_url)
+        payload: Dict[str, Any] = {
+            "task": task,
+            "model": _BROWSERUSE_CLOUD_MODEL,
+            "outputSchema": output_schema,
+            "keepAlive": False,
+            "enableRecording": True,
+        }
+
+        resp = await self._client.post("/sessions", json=payload)
+        if resp.status_code >= 400:
+            logger.error("POST /sessions failed: %s %s", resp.status_code, resp.text[:300])
+            return CheckoutResult(
+                success=False,
+                error=f"POST /sessions -> {resp.status_code}: {resp.text[:200]}",
+            )
+        sess = resp.json()
+        sess_id = sess.get("id")
+        live_url = sess.get("liveUrl")
+        logger.info("Browser Use Cloud session created: id=%s liveUrl=%s", sess_id, live_url)
 
         action_log: List[Dict[str, Any]] = []
         screenshots: List[str] = []
         terminal = False
         result_payload: Dict[str, Any] = {}
+        is_successful: Optional[bool] = None
+        phase = sess.get("status", "running")
         deadline = time.time() + 900
 
         while not terminal and time.time() < deadline:
             await asyncio.sleep(4)
-            status_resp = await self._client.get(f"/task/{task_id}")
-            status_resp.raise_for_status()
+            status_resp = await self._client.get(f"/sessions/{sess_id}")
+            if status_resp.status_code >= 400:
+                return CheckoutResult(
+                    success=False,
+                    live_url=live_url,
+                    error=f"GET /sessions/{{id}} -> {status_resp.status_code}",
+                )
             status = status_resp.json()
             phase = status.get("status", "running")
-            logger.debug("task %s phase=%s steps=%s", task_id, phase, len(status.get("steps", [])))
+            live_url = status.get("liveUrl") or live_url
+            is_successful = status.get("isTaskSuccessful", is_successful)
+            result_payload = status.get("output") or {}
+            logger.debug("session %s phase=%s steps=%s", sess_id, phase, status.get("stepCount"))
 
-            for step in status.get("steps", []):
-                step_id = step.get("id") or step.get("step_id")
-                if any(a.get("step_id") == step_id for a in action_log):
-                    continue
-                action_log.append({
-                    "step_id": step_id,
-                    "action": step.get("action") or step.get("evaluation_previous_goal"),
-                    "url": step.get("url"),
-                    "screenshot_url": step.get("screenshot_url"),
-                    "ts": step.get("timestamp"),
-                })
-                if save_screenshots and step.get("screenshot_url"):
-                    shot_name = f"step_{len(screenshots):03d}.png"
-                    path = run_dir / shot_name
-                    try:
-                        img_resp = await self._client.get(step["screenshot_url"])
-                        img_resp.raise_for_status()
-                        path.write_bytes(img_resp.content)
-                        screenshots.append(str(path))
-                    except Exception as exc:
-                        logger.warning("screenshot fetch failed: %s", exc)
-
-            if phase in ("finished", "completed", "stopped", "failed"):
+            if phase in ("finished", "completed", "stopped", "failed", "error"):
                 terminal = True
-                result_payload = status.get("output") or status.get("result") or {}
-                if phase == "failed":
-                    return CheckoutResult(
-                        success=False,
-                        live_url=live_url,
-                        action_log=action_log,
-                        screenshots=screenshots,
-                        error=status.get("error", "browser_use_cloud_failed"),
-                    )
+
+        # Fetch per-step messages for screenshots and action log.
+        try:
+            msg_resp = await self._client.get(f"/sessions/{sess_id}/messages")
+            if msg_resp.status_code < 400:
+                messages = msg_resp.json() or []
+                for m in messages if isinstance(messages, list) else messages.get("items", []):
+                    shot_url = m.get("screenshotUrl")
+                    action_log.append({
+                        "type": m.get("type"),
+                        "summary": m.get("summary"),
+                        "data": m.get("data"),
+                        "screenshot_url": shot_url,
+                        "created_at": m.get("createdAt"),
+                    })
+                    if save_screenshots and shot_url:
+                        shot_name = f"step_{len(screenshots):03d}.png"
+                        path = run_dir / shot_name
+                        try:
+                            img_resp = await self._client.get(shot_url)
+                            img_resp.raise_for_status()
+                            path.write_bytes(img_resp.content)
+                            screenshots.append(str(path))
+                        except Exception as exc:
+                            logger.warning("screenshot fetch failed: %s", exc)
+        except Exception as exc:
+            logger.warning("messages fetch failed: %s", exc)
+
+        success = bool(is_successful) if is_successful is not None else phase in ("finished", "completed")
+        if not success:
+            return CheckoutResult(
+                success=False,
+                live_url=live_url,
+                action_log=action_log,
+                screenshots=screenshots,
+                error=f"phase={phase}",
+            )
 
         return CheckoutResult(
             success=True,
