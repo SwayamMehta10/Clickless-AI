@@ -12,7 +12,7 @@ from typing import List
 
 from langchain_core.messages import AIMessage, HumanMessage
 
-from src.api.instacart_mock import get_client
+from src.api.instacart_client import get_client
 from src.api.product_schema import CartItem
 from src.llm import ollama_client as llm
 from src.nlu import intent_classifier, slot_filler
@@ -241,8 +241,44 @@ def response_generator(state: AgentState) -> AgentState:
 # ---------------------------------------------------------------------------
 
 def checkout_handoff(state: AgentState) -> AgentState:
-    """Mark cart as ready for browser checkout."""
+    """Hand the confirmed cart off to the BrowserUse checkout agent."""
     ds: DialogueState = state["dialogue_state"]
     if not ds.cart:
         return {**state, "error": "Your cart is empty. Add some items before checking out."}
-    return {**state, "checkout_ready": True}
+
+    from src.browser.checkout_agent import run_checkout
+    from src.llm.preference_model import update_preferences
+
+    try:
+        result = _run_async(run_checkout(
+            ds.cart,
+            user_id=state.get("user_id") or "default",
+            scenario_id=state.get("session_id"),
+        ))
+    except Exception as exc:
+        logger.exception("Checkout handoff failed")
+        return {**state, "error": f"Checkout failed: {exc}"}
+
+    rejected = []
+    ranked = state.get("ranked_results", [])
+    cart_ids = {ci.product.instacart_id for ci in ds.cart}
+    for r in ranked:
+        if r.product.instacart_id not in cart_ids:
+            rejected.append(r.product.name)
+
+    try:
+        update_preferences(
+            user_id=state.get("user_id") or "default",
+            confirmed_cart=ds.cart,
+            rejected_items=rejected[:5],
+            new_dietary_flags=ds.dietary_preferences,
+            new_budget=ds.budget,
+        )
+    except Exception as exc:
+        logger.warning("Preference update failed: %s", exc)
+
+    return {
+        **state,
+        "checkout_ready": True,
+        "checkout_result": result,
+    }

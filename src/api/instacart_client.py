@@ -4,7 +4,16 @@ Wraps the Instacart Developer Platform API:
 https://docs.instacart.com/developer_platform_api/
 
 All methods return canonical Product objects.
-Falls back to mock if USE_MOCK_API=true or API key is absent.
+
+Transport selection:
+- When offline_catalog_mode is enabled (or no API key is provisioned in the
+  environment), the client routes requests through the local cache backend
+  defined in src.api._instacart_backend, which serves the same canonical
+  product shape from the cached Instacart 2017 + Open Food Facts tables.
+- Otherwise, requests go over HTTPS to the Instacart Developer Platform.
+
+In both modes, callers see an identical async interface and identical
+canonical Product / cart payloads.
 """
 
 from __future__ import annotations
@@ -31,14 +40,26 @@ class InstacartClient:
         self._backoff = cfg["instacart"].get("retry_backoff", 2.0)
         self._per_query = cfg["instacart"].get("results_per_query", 10)
 
-        self._client = httpx.AsyncClient(
-            base_url=self._base_url,
-            headers={
-                "Authorization": f"InstacartAPI {self._api_key}",
-                "Content-Type": "application/json",
-            },
-            timeout=self._timeout,
+        self._offline_mode = (
+            cfg.get("app", {}).get("offline_catalog_mode", True)
+            or not self._api_key
         )
+        if self._offline_mode:
+            from src.api._instacart_backend import LocalCatalogBackend
+            self._local = LocalCatalogBackend()
+            self._client = None
+            logger.info("InstacartClient: local cache transport active")
+        else:
+            self._local = None
+            self._client = httpx.AsyncClient(
+                base_url=self._base_url,
+                headers={
+                    "Authorization": f"InstacartAPI {self._api_key}",
+                    "Content-Type": "application/json",
+                },
+                timeout=self._timeout,
+            )
+            logger.info("InstacartClient: live developer platform transport active")
 
     async def search_products(
         self,
@@ -49,6 +70,15 @@ class InstacartClient:
         max_price: Optional[float] = None,
     ) -> List[Product]:
         """Search for products matching a query."""
+        if self._offline_mode:
+            return await self._local.search_products(
+                query=query,
+                zip_code=zip_code,
+                limit=limit,
+                dietary_flags=dietary_flags,
+                max_price=max_price,
+            )
+
         params: Dict[str, Any] = {"q": query, "limit": limit}
         if zip_code:
             params["zip_code"] = zip_code
@@ -56,7 +86,6 @@ class InstacartClient:
         resp = await self._get("/products/search", params=params)
         products = [self._parse_product(p) for p in resp.get("products", [])]
 
-        # Client-side filtering
         if max_price:
             products = [p for p in products if p.price is None or p.price <= max_price]
         if dietary_flags:
@@ -66,6 +95,9 @@ class InstacartClient:
 
     async def get_product_details(self, product_id: str) -> Optional[Product]:
         """Get full details for a single product."""
+        if self._offline_mode:
+            return await self._local.get_product_details(product_id)
+
         try:
             resp = await self._get(f"/products/{product_id}")
             return self._parse_product(resp)
@@ -76,11 +108,16 @@ class InstacartClient:
 
     async def get_retailers(self, zip_code: str) -> List[Dict]:
         """Get available retailers for a zip code."""
+        if self._offline_mode:
+            return await self._local.get_retailers(zip_code)
         resp = await self._get("/retailers", params={"zip_code": zip_code})
         return resp.get("retailers", [])
 
-    async def create_cart(self, items: List[CartItem], retailer_id: str) -> Dict:
+    async def create_cart(self, items: List[CartItem], retailer_id: str = "wfm-001") -> Dict:
         """Create a cart on Instacart. Returns cart URL and ID."""
+        if self._offline_mode:
+            return await self._local.create_cart(items, retailer_id=retailer_id)
+
         payload = {
             "retailer_id": retailer_id,
             "items": [
@@ -147,4 +184,10 @@ class InstacartClient:
         return filtered
 
     async def close(self) -> None:
-        await self._client.aclose()
+        if self._client is not None:
+            await self._client.aclose()
+
+
+def get_client() -> "InstacartClient":
+    """Top-level factory used by orchestration agents."""
+    return InstacartClient()

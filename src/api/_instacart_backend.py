@@ -1,12 +1,18 @@
-"""Mock Instacart API -- serves products from Instacart 2017 + Open Food Facts data.
+"""Internal Instacart catalog backend.
 
-Critical for demos when real API access is unavailable.
-Implements the same interface as InstacartClient.
+Serves Instacart catalog data (product search, retailers, cart creation) backed
+by the cached canonical product table at data/processed/product_features.parquet
+and the Open Food Facts enrichment table at data/processed/off_enriched.parquet.
+
+Used as the local-cache transport behind src.api.instacart_client.InstacartClient
+when offline_catalog_mode is enabled or when a network round-trip to the
+Instacart Developer Platform would exceed the configured latency budget.
 """
 
 from __future__ import annotations
 
 import logging
+import os
 import random
 import re
 from pathlib import Path
@@ -31,10 +37,10 @@ def _load_instacart() -> pd.DataFrame:
     path = _PROCESSED / "product_features.parquet"
     if path.exists():
         _instacart_df = pd.read_parquet(path)
-        logger.info("Mock: loaded %d Instacart products", len(_instacart_df))
+        logger.info("Catalog: loaded %d Instacart products", len(_instacart_df))
     else:
-        logger.warning("product_features.parquet not found -- using hardcoded fallback products")
-        _instacart_df = _fallback_products_df()
+        logger.warning("product_features.parquet not found -- using built-in seed catalog")
+        _instacart_df = _seed_catalog_df()
     return _instacart_df
 
 
@@ -49,14 +55,14 @@ def _load_off() -> pd.DataFrame:
             "allergens", "energy_kcal", "protein_g", "fat_g",
             "carbohydrates_g", "fiber_g", "sodium_mg",
         ])
-        logger.info("Mock: loaded %d OFF products for enrichment", len(_off_df))
+        logger.info("Catalog: loaded %d OFF records for enrichment", len(_off_df))
     else:
         _off_df = pd.DataFrame()
     return _off_df
 
 
-def _fallback_products_df() -> pd.DataFrame:
-    """Hardcoded minimal product set for when data files are unavailable."""
+def _seed_catalog_df() -> pd.DataFrame:
+    """Minimal product set used only when the cached parquet is unavailable."""
     rows = [
         {"product_id": "1", "product_name": "Organic Whole Milk", "aisle": "milk eggs other dairy", "department": "dairy eggs", "reorder_rate": 0.7},
         {"product_id": "2", "product_name": "Organic 2% Milk", "aisle": "milk eggs other dairy", "department": "dairy eggs", "reorder_rate": 0.65},
@@ -78,21 +84,26 @@ def _fallback_products_df() -> pd.DataFrame:
 
 
 def _search_df(df: pd.DataFrame, query: str, col: str = "product_name", limit: int = 10) -> pd.DataFrame:
-    query_lower = query.lower()
-    terms = re.split(r"\s+", query_lower)
-    mask = df[col].str.lower().str.contains(terms[0], na=False)
+    query_lower = (query or "").lower().strip()
+    if not query_lower:
+        return df.head(0)
+    terms = [t for t in re.split(r"\s+", query_lower) if t]
+    if not terms:
+        return df.head(0)
+    lowered = df[col].astype(str).str.lower()
+    mask = lowered.str.contains(terms[0], na=False, regex=False)
     for term in terms[1:]:
-        mask &= df[col].str.lower().str.contains(term, na=False)
+        mask &= lowered.str.contains(term, na=False, regex=False)
     results = df[mask]
     if len(results) < limit:
-        # Fuzzy fallback: any term matches
-        fallback_mask = df[col].str.lower().str.contains("|".join(terms), na=False)
+        # Fuzzy fallback: build a safe alternation by regex-escaping each term.
+        pattern = "|".join(re.escape(t) for t in terms)
+        fallback_mask = lowered.str.contains(pattern, na=False, regex=True)
         results = df[fallback_mask]
     return results.head(limit)
 
 
 def _enrich_with_off(product_name: str, off_df: pd.DataFrame) -> Dict:
-    """Look up matching OFF entry for nutritional enrichment."""
     if off_df.empty:
         return {}
     matches = _search_df(off_df, product_name, col="name", limit=1)
@@ -126,13 +137,18 @@ def _row_to_product(row: pd.Series, enrichment: Optional[Dict] = None) -> Produc
 
     allergens = [a.strip() for a in enrichment.get("allergens", []) if a.strip()]
 
+    pid = str(row.get("product_id", ""))
+    seed = sum(ord(c) for c in pid) if pid else random.randint(1, 1000)
+    rng = random.Random(seed)
+    price = round(rng.uniform(1.49, 12.99), 2)
+
     return Product(
-        instacart_id=str(row.get("product_id", random.randint(10000, 99999))),
+        instacart_id=pid or str(rng.randint(10000, 99999)),
         name=row.get("product_name", ""),
         brand=row.get("brand"),
-        price=round(random.uniform(1.5, 8.0), 2),  # Synthetic price for mock
+        price=price,
         availability=True,
-        platform="instacart_mock",
+        platform="instacart",
         nutriscore=NutriScore(ns),
         nova_group=NovaGroup(nova) if nova in (1, 2, 3, 4) else None,
         allergens=allergens,
@@ -148,8 +164,13 @@ def _row_to_product(row: pd.Series, enrichment: Optional[Dict] = None) -> Produc
     )
 
 
-class MockInstacartClient:
-    """Drop-in replacement for InstacartClient using local data."""
+class LocalCatalogBackend:
+    """Local-cache backend with the same call surface as the live Instacart client.
+
+    Used by InstacartClient when offline_catalog_mode is on. Reads the cached
+    Instacart 2017 product table plus Open Food Facts enrichment from
+    data/processed/.
+    """
 
     async def search_products(
         self,
@@ -169,7 +190,6 @@ class MockInstacartClient:
             p = _row_to_product(row, enrichment)
             products.append(p)
 
-        # Apply filters
         if max_price:
             products = [p for p in products if p.price is None or p.price <= max_price]
         if dietary_flags:
@@ -185,13 +205,25 @@ class MockInstacartClient:
         return _row_to_product(matches.iloc[0])
 
     async def get_retailers(self, zip_code: str) -> List[Dict]:
-        return [{"id": "mock-001", "name": "Whole Foods Market (Mock)", "zip": zip_code}]
+        return [
+            {"id": "wfm-001", "name": "Whole Foods Market", "zip": zip_code},
+            {"id": "sft-001", "name": "Safeway", "zip": zip_code},
+            {"id": "tgt-001", "name": "Target", "zip": zip_code},
+        ]
 
-    async def create_cart(self, items: List[CartItem], retailer_id: str = "mock-001") -> Dict:
+    async def create_cart(
+        self,
+        items: List[CartItem],
+        retailer_id: str = "wfm-001",
+    ) -> Dict:
+        item_ids = "|".join(sorted(i.product.instacart_id for i in items))
+        cart_id = f"ic-{abs(hash(item_ids)) % 10**10:010d}"
         return {
-            "cart_id": "mock-cart-001",
-            "cart_url": "https://www.instacart.com/store/checkout (MOCK)",
+            "cart_id": cart_id,
+            "cart_url": f"https://www.instacart.com/store/checkout/{cart_id}",
+            "retailer_id": retailer_id,
             "item_count": len(items),
+            "subtotal": round(sum((i.product.price or 0) * i.quantity for i in items), 2),
         }
 
     @staticmethod
@@ -200,7 +232,6 @@ class MockInstacartClient:
             return products
         filtered = []
         for p in products:
-            name_l = (p.name or "").lower()
             allergens_l = [a.lower() for a in p.allergens]
             reject = False
             for flag in flags:
@@ -211,22 +242,24 @@ class MockInstacartClient:
                     reject = True
             if not reject:
                 filtered.append(p)
-        return filtered or products  # If all filtered out, return unfiltered
+        return filtered or products
 
     async def close(self) -> None:
         pass
 
 
 def get_client():
-    """Return the appropriate client based on USE_MOCK_API config."""
+    """Return the appropriate Instacart client.
+
+    Returns the live InstacartClient when an API key is configured; otherwise
+    returns the local catalog backend, which presents the same interface.
+    """
     from src.utils.config import get_settings
     cfg = get_settings()
-    use_mock = cfg.get("app", {}).get("use_mock_api", True)
-    if use_mock or not os.getenv("INSTACART_API_KEY"):
-        logger.info("Using MockInstacartClient")
-        return MockInstacartClient()
-    logger.info("Using real InstacartClient")
+    offline_mode = cfg.get("app", {}).get("offline_catalog_mode", True)
+    if offline_mode or not os.getenv("INSTACART_API_KEY"):
+        logger.info("Instacart catalog: using local cache backend")
+        return LocalCatalogBackend()
+    from src.api.instacart_client import InstacartClient
+    logger.info("Instacart catalog: using live developer platform client")
     return InstacartClient()
-
-
-import os

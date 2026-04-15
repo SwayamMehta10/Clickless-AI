@@ -18,7 +18,14 @@ evaluation/results/*.csv
 evaluation/results/*.json
 
 # Proposal
-Project Proposal.pdf
+# Project Proposal.pdf
 
 # PyVis render artifacts (dropped into CWD by net.save_graph)
 lib/
+
+# Runtime demo outputs (screenshots, action logs, live_url recordings)
+artifacts/
+
+# Local credential vault
+data/.vault_salt
+data/credential_store.enc

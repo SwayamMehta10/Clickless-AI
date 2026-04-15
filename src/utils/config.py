@@ -33,7 +33,7 @@ def _apply_env_overrides(cfg: dict) -> None:
         ("neo4j", "user"): "NEO4J_USER",
         ("neo4j", "password"): "NEO4J_PASSWORD",
         ("ollama", "base_url"): "OLLAMA_BASE_URL",
-        ("app", "use_mock_api"): "USE_MOCK_API",
+        ("app", "offline_catalog_mode"): "CLICKLESS_OFFLINE_CATALOG",
     }
     for (section, key), env_var in overrides.items():
         val = os.getenv(env_var)

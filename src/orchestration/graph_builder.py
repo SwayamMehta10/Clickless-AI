@@ -127,6 +127,7 @@ def run_pipeline(
         "ranked_results": [],
         "cart": cart or dialogue_state.cart,
         "checkout_ready": False,
+        "checkout_result": None,
         "error": None,
         "user_id": user_id,
         "session_id": session_id,

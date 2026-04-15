@@ -79,49 +79,101 @@ def extract_from_off_dataset(
     max_products: int = 10_000,
     resume: bool = True,
 ) -> None:
-    """Batch-extract triples from OFF dataset and write to triples.jsonl."""
+    """Batch-extract triples from OFF dataset and write to triples.jsonl.
+
+    Each line records the source product name AND the OFF product code so the
+    Neo4j loader can attach extracted entities back to their source Product
+    node via (:Product)-[:HAS_ATTRIBUTE]->(:Entity) edges.
+    """
     path = _PROCESSED / "off_enriched.parquet"
     if not path.exists():
         raise FileNotFoundError("off_enriched.parquet not found. Run preprocess_off.py first.")
 
-    df = pd.read_parquet(path, columns=["name", "ingredients", "category"])
+    cols = ["name", "ingredients", "category"]
+    has_code = False
+    code_col = None
+    for candidate in ("barcode", "code", "product_code"):
+        try:
+            df = pd.read_parquet(path, columns=cols + [candidate])
+            has_code = True
+            code_col = candidate
+            break
+        except Exception:
+            continue
+    if not has_code:
+        df = pd.read_parquet(path, columns=cols)
+
     df = df[df["ingredients"].notna()].head(max_products)
 
-    # Resume: skip already-processed products
-    processed_names = set()
+    # Resume state: track by BOTH barcode and name so rows written by older
+    # runs (which didn't record barcodes) still match the current
+    # code-key-based iteration.
+    processed_codes: set = set()
+    processed_names: set = set()
     if resume and _TRIPLES_PATH.exists():
         with open(_TRIPLES_PATH) as f:
             for line in f:
-                obj = json.loads(line)
-                processed_names.add(obj.get("product"))
-        logger.info("Resuming: skipping %d already-processed products", len(processed_names))
+                try:
+                    obj = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                c = obj.get("product_code")
+                n = obj.get("product")
+                if c:
+                    processed_codes.add(c)
+                if n:
+                    processed_names.add(n)
+        logger.info(
+            "Resuming: %d codes + %d names already processed",
+            len(processed_codes), len(processed_names),
+        )
 
     count = 0
+    skipped_in_loop = 0
     with open(_TRIPLES_PATH, "a") as out:
         for _, row in df.iterrows():
             name = str(row.get("name", ""))
-            if name in processed_names:
+            code = str(row.get(code_col, "")) if has_code else ""
+            if (code and code in processed_codes) or (name and name in processed_names):
+                skipped_in_loop += 1
                 continue
 
             ingredients_text = str(row.get("ingredients", ""))
             triples = extract_triples_from_text(name, ingredients_text)
 
-            for s, p, o in triples:
-                out.write(json.dumps({"product": name, "s": s, "p": p, "o": o}) + "\n")
+            if triples:
+                for s, p, o in triples:
+                    rec = {"product": name, "product_code": code, "s": s, "p": p, "o": o}
+                    out.write(json.dumps(rec) + "\n")
+            else:
+                # Sentinel marker: products that produced zero triples must
+                # still be recorded so resume() can skip them next run.
+                marker = {"product": name, "product_code": code, "s": "", "p": "", "o": ""}
+                out.write(json.dumps(marker) + "\n")
 
+            out.flush()
+            if code:
+                processed_codes.add(code)
+            if name:
+                processed_names.add(name)
             count += 1
             if count % 100 == 0:
-                logger.info("Processed %d/%d products", count, len(df))
+                logger.info(
+                    "Processed %d new this run / %d skipped / %d total df rows",
+                    count, skipped_in_loop, len(df),
+                )
 
     logger.info("Triple extraction complete. Total products processed: %d", count)
 
 
 def load_triples() -> List[dict]:
-    """Load all extracted triples from disk."""
+    """Load all extracted triples from disk, filtering out resume markers."""
     if not _TRIPLES_PATH.exists():
         return []
     triples = []
     with open(_TRIPLES_PATH) as f:
         for line in f:
-            triples.append(json.loads(line.strip()))
+            obj = json.loads(line.strip())
+            if obj.get("s") and obj.get("p") and obj.get("o"):
+                triples.append(obj)
     return triples

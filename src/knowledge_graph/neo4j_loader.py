@@ -41,6 +41,16 @@ def _create_constraints(driver: Driver) -> None:
 
 
 def _batch_merge_triples(session, batch: List[dict]) -> None:
+    """Persist SPO triples as Entity-RELATES-Entity edges and link each entity
+    back to its source Product node via HAS_ATTRIBUTE."""
+    # Product nodes are loaded with stripped names — mirror that on the triple
+    # side so MATCH-by-name succeeds. Without this, ~80% of triples fail to
+    # link silently when the OFF source name had leading/trailing whitespace.
+    normalized = [
+        {**t, "product": str(t.get("product", "")).strip()}
+        for t in batch
+    ]
+
     query = """
     UNWIND $triples AS t
     MERGE (s:Entity {name: t.s})
@@ -49,11 +59,30 @@ def _batch_merge_triples(session, batch: List[dict]) -> None:
     ON CREATE SET r.count = 1
     ON MATCH SET r.count = r.count + 1
     """
-    session.run(query, triples=batch)
+    session.run(query, triples=normalized)
+
+    link_query = """
+    UNWIND $triples AS t
+    MATCH (p:Product {name: t.product})
+    MATCH (s:Entity {name: t.s})
+    MATCH (o:Entity {name: t.o})
+    MERGE (p)-[:HAS_ATTRIBUTE]->(s)
+    MERGE (p)-[:HAS_ATTRIBUTE]->(o)
+    """
+    linkable = [t for t in normalized if t.get("product")]
+    if linkable:
+        session.run(link_query, triples=linkable)
 
 
 def _load_product_nodes(session, off_parquet_path: Path, batch_size: int = 500, max_products: Optional[int] = None) -> int:
-    """Create Product nodes with OFF nutritional attributes."""
+    """Create Product nodes with OFF nutritional attributes.
+
+    Applies the same ``df[df["ingredients"].notna()].head(max_products)``
+    slice used by the SPO extractor in spo_extractor.extract_from_off_dataset,
+    so every extracted triple has a matching Product node in the graph. If
+    the two slices diverge the HAS_ATTRIBUTE cross-link step silently drops
+    most triples because their source Product node does not exist.
+    """
     import pandas as pd
 
     if not off_parquet_path.exists():
@@ -61,6 +90,8 @@ def _load_product_nodes(session, off_parquet_path: Path, batch_size: int = 500, 
         return 0
 
     df = pd.read_parquet(off_parquet_path)
+    if "ingredients" in df.columns:
+        df = df[df["ingredients"].notna()]
     if max_products:
         df = df.head(max_products)
     count = 0

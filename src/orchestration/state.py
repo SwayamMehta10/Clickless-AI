@@ -18,6 +18,7 @@ class AgentState(TypedDict):
     ranked_results: List[RankedProduct]
     cart: List[CartItem]
     checkout_ready: bool
+    checkout_result: Optional[dict]
     error: Optional[str]
     # Metadata
     user_id: Optional[str]

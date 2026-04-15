@@ -1,0 +1,50 @@
+{"qid": "W1", "category": "weekly", "utterance": "I need milk, eggs, bread, chicken, and broccoli under $30", "item": "milk", "dietary": [], "max_price": 30.0}
+{"qid": "W2", "category": "weekly", "utterance": "Weekly groceries: apples, yogurt, pasta, ground beef, carrots", "item": "apples", "dietary": [], "max_price": null}
+{"qid": "W3", "category": "weekly", "utterance": "I need staples: rice, beans, onions, garlic, olive oil", "item": "rice", "dietary": [], "max_price": null}
+{"qid": "W4", "category": "weekly", "utterance": "Breakfast items: cereal, oatmeal, orange juice, blueberries, bagels", "item": "cereal", "dietary": [], "max_price": null}
+{"qid": "W5", "category": "weekly", "utterance": "Dinner ingredients for a family of 4: salmon, potatoes, asparagus, lemon", "item": "salmon", "dietary": [], "max_price": null}
+{"qid": "D1", "category": "dietary", "utterance": "Gluten-free pasta, low-sodium tomato sauce, organic ground turkey", "item": "pasta", "dietary": ["gluten-free", "low-sodium", "organic"], "max_price": null}
+{"qid": "D2", "category": "dietary", "utterance": "Vegan protein sources -- tofu, lentils, quinoa, almond milk", "item": "tofu", "dietary": ["vegan"], "max_price": null}
+{"qid": "D3", "category": "dietary", "utterance": "Diabetic-friendly snacks with no added sugar", "item": "nuts", "dietary": ["no-sugar"], "max_price": null}
+{"qid": "D4", "category": "dietary", "utterance": "Nut-free school lunch items: bread, cheese, turkey, apples, pretzels", "item": "bread", "dietary": ["nut-free"], "max_price": null}
+{"qid": "D5", "category": "dietary", "utterance": "Dairy-free breakfast: oat milk, coconut yogurt, gluten-free granola", "item": "oat milk", "dietary": ["dairy-free", "gluten-free"], "max_price": null}
+{"qid": "B1", "category": "bulk", "utterance": "Snacks for 20 people, $50 budget, no nuts", "item": "chips", "dietary": ["nut-free"], "max_price": 50.0}
+{"qid": "B2", "category": "bulk", "utterance": "Party drinks for 15 people under $40: soda, juice, water", "item": "soda", "dietary": [], "max_price": 40.0}
+{"qid": "B3", "category": "bulk", "utterance": "Bulk pantry restock under $75: rice, pasta, canned tomatoes, flour, sugar", "item": "rice", "dietary": [], "max_price": 75.0}
+{"qid": "B4", "category": "bulk", "utterance": "Office breakfast for 10 people under $30: bagels, cream cheese, coffee, fruit", "item": "bagels", "dietary": [], "max_price": 30.0}
+{"qid": "B5", "category": "bulk", "utterance": "BBQ supplies for 12 under $60: burgers, buns, lettuce, tomato, condiments", "item": "burgers", "dietary": [], "max_price": 60.0}
+{"qid": "S01", "category": "bulk", "utterance": "I need broccoli under $10", "item": "broccoli", "dietary": [], "max_price": 10.0}
+{"qid": "S02", "category": "dietary", "utterance": "I need bagels that is gluten-free and low-sodium under $75", "item": "bagels", "dietary": ["gluten-free", "low-sodium"], "max_price": 75.0}
+{"qid": "S03", "category": "weekly", "utterance": "I need quinoa under $50", "item": "quinoa", "dietary": [], "max_price": 50.0}
+{"qid": "S04", "category": "weekly", "utterance": "I need bagels under $50", "item": "bagels", "dietary": [], "max_price": 50.0}
+{"qid": "S05", "category": "dietary", "utterance": "I need bread that is gluten-free and vegan", "item": "bread", "dietary": ["gluten-free", "vegan"], "max_price": null}
+{"qid": "S06", "category": "dietary", "utterance": "I need bread that is nut-free and organic under $25", "item": "bread", "dietary": ["nut-free", "organic"], "max_price": 25.0}
+{"qid": "S07", "category": "dietary", "utterance": "I need yogurt that is vegan and low-sodium under $75", "item": "yogurt", "dietary": ["vegan", "low-sodium"], "max_price": 75.0}
+{"qid": "S08", "category": "dietary", "utterance": "I need cereal that is low-sodium and nut-free", "item": "cereal", "dietary": ["low-sodium", "nut-free"], "max_price": null}
+{"qid": "S09", "category": "bulk", "utterance": "I need tofu under $25", "item": "tofu", "dietary": [], "max_price": 25.0}
+{"qid": "S10", "category": "bulk", "utterance": "I need almond milk under $15", "item": "almond milk", "dietary": [], "max_price": 15.0}
+{"qid": "S11", "category": "dietary", "utterance": "I need bread that is vegan and organic", "item": "bread", "dietary": ["vegan", "organic"], "max_price": null}
+{"qid": "S12", "category": "dietary", "utterance": "I need tomato sauce that is organic under $60", "item": "tomato sauce", "dietary": ["organic"], "max_price": 60.0}
+{"qid": "S13", "category": "dietary", "utterance": "I need almond milk that is vegan", "item": "almond milk", "dietary": ["vegan"], "max_price": null}
+{"qid": "S14", "category": "weekly", "utterance": "I need pasta under $75", "item": "pasta", "dietary": [], "max_price": 75.0}
+{"qid": "S15", "category": "dietary", "utterance": "I need crackers that is dairy-free under $100", "item": "crackers", "dietary": ["dairy-free"], "max_price": 100.0}
+{"qid": "S16", "category": "bulk", "utterance": "I need bagels under $20", "item": "bagels", "dietary": [], "max_price": 20.0}
+{"qid": "S17", "category": "weekly", "utterance": "I need carrots", "item": "carrots", "dietary": [], "max_price": null}
+{"qid": "S18", "category": "weekly", "utterance": "I need olive oil", "item": "olive oil", "dietary": [], "max_price": null}
+{"qid": "S19", "category": "dietary", "utterance": "I need bagels that is nut-free and low-sodium under $40", "item": "bagels", "dietary": ["nut-free", "low-sodium"], "max_price": 40.0}
+{"qid": "S20", "category": "dietary", "utterance": "I need crackers that is organic and gluten-free", "item": "crackers", "dietary": ["organic", "gluten-free"], "max_price": null}
+{"qid": "S21", "category": "dietary", "utterance": "I need apples that is dairy-free", "item": "apples", "dietary": ["dairy-free"], "max_price": null}
+{"qid": "S22", "category": "dietary", "utterance": "I need bread that is dairy-free and low-sodium", "item": "bread", "dietary": ["dairy-free", "low-sodium"], "max_price": null}
+{"qid": "S23", "category": "dietary", "utterance": "I need cheese that is dairy-free under $40", "item": "cheese", "dietary": ["dairy-free"], "max_price": 40.0}
+{"qid": "S24", "category": "dietary", "utterance": "I need eggs that is low-sodium under $15", "item": "eggs", "dietary": ["low-sodium"], "max_price": 15.0}
+{"qid": "S25", "category": "bulk", "utterance": "I need crackers under $30", "item": "crackers", "dietary": [], "max_price": 30.0}
+{"qid": "S26", "category": "dietary", "utterance": "I need chicken breast that is vegan and organic under $60", "item": "chicken breast", "dietary": ["vegan", "organic"], "max_price": 60.0}
+{"qid": "S27", "category": "weekly", "utterance": "I need granola under $75", "item": "granola", "dietary": [], "max_price": 75.0}
+{"qid": "S28", "category": "weekly", "utterance": "I need apples", "item": "apples", "dietary": [], "max_price": null}
+{"qid": "S29", "category": "dietary", "utterance": "I need apples that is organic and low-sodium", "item": "apples", "dietary": ["organic", "low-sodium"], "max_price": null}
+{"qid": "S30", "category": "bulk", "utterance": "I need coconut yogurt under $20", "item": "coconut yogurt", "dietary": [], "max_price": 20.0}
+{"qid": "S31", "category": "weekly", "utterance": "I need ground beef", "item": "ground beef", "dietary": [], "max_price": null}
+{"qid": "S32", "category": "dietary", "utterance": "I need milk that is nut-free under $30", "item": "milk", "dietary": ["nut-free"], "max_price": 30.0}
+{"qid": "S33", "category": "weekly", "utterance": "I need milk under $40", "item": "milk", "dietary": [], "max_price": 40.0}
+{"qid": "S34", "category": "weekly", "utterance": "I need broccoli", "item": "broccoli", "dietary": [], "max_price": null}
+{"qid": "S35", "category": "dietary", "utterance": "I need popcorn that is dairy-free and gluten-free under $75", "item": "popcorn", "dietary": ["dairy-free", "gluten-free"], "max_price": 75.0}

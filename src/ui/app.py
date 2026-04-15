@@ -106,15 +106,35 @@ if st.session_state.checkout_triggered:
     st.session_state.checkout_triggered = False
     ds = st.session_state.dialogue_state
     if ds.cart:
-        with st.spinner("Starting browser checkout..."):
+        with st.status("Handing off to BrowserUse checkout...", expanded=True) as status:
             try:
                 from src.browser.checkout_agent import run_checkout
-                result = asyncio.run(run_checkout(ds.cart, user_id="default"))
-                if result["success"]:
-                    st.success("Checkout initiated! Check your Instacart app to complete payment.")
+                result = asyncio.run(run_checkout(
+                    ds.cart,
+                    user_id="default",
+                    scenario_id=st.session_state.session_id,
+                ))
+                st.session_state.last_checkout = result
+                if result.get("success"):
+                    status.update(
+                        label=f"Checkout complete · {result.get('items_added', 0)} items",
+                        state="complete",
+                    )
+                    st.toast("Cart handed off to Instacart", icon="✅")
+                    if result.get("live_url"):
+                        st.markdown("**Live BrowserUse session:**")
+                        st.components.v1.iframe(result["live_url"], height=520)
+                    if result.get("cart_url"):
+                        st.markdown(f"[Open Instacart cart →]({result['cart_url']})")
+                    if result.get("screenshots"):
+                        with st.expander(f"Step screenshots ({len(result['screenshots'])})"):
+                            for shot in result["screenshots"][:12]:
+                                st.image(shot, use_container_width=True)
                 else:
+                    status.update(label="Checkout did not complete", state="error")
                     st.error(f"Checkout failed: {result.get('error', 'Unknown error')}")
             except Exception as exc:
+                status.update(label="Checkout error", state="error")
                 st.error(f"Browser checkout error: {exc}")
     else:
         st.warning("Your cart is empty.")
@@ -135,6 +155,7 @@ for msg in st.session_state.messages:
                 item = CartItem(product=rp.product, quantity=1)
                 st.session_state.dialogue_state.add_to_cart(item)
                 st.session_state.selected_product = rp.product.name
+                st.toast(f"Added {rp.product.name} to cart", icon="🛒")
                 st.rerun()
 
             render_results(msg["results"], on_add=_add_handler)

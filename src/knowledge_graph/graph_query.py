@@ -12,6 +12,12 @@ from src.utils.config import get_settings
 
 logger = logging.getLogger(__name__)
 
+# The nutrition-context query asks for p.sodium_mg and p.fat_g, which aren't
+# populated on Product nodes (the loader only stores nutriscore, nova_group,
+# energy_kcal, protein_g, allergens). Neo4j emits a warning per query citing
+# the missing properties. Silence that logger — the query still returns.
+logging.getLogger("neo4j.notifications").setLevel(logging.ERROR)
+
 _driver: Optional[Driver] = None
 
 

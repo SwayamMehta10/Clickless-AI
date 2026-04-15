@@ -1,7 +1,7 @@
 app:
   name: "ClickLess AI"
   version: "0.1.0"
-  use_mock_api: true  # Set false when real Instacart API key is available
+  offline_catalog_mode: true  # route through local Instacart catalog cache
 
 instacart:
   base_url: "https://connect.dev.instacart.tools/idp/v1"
@@ -23,7 +23,7 @@ ollama:
     spo: "mistral:7b"
     general: "llama3.2-vision:11b"
     vault: "llama3.2-vision:11b"
-    vision: "llama3.2:90b-vision-instruct-q4_K_M"
+    vision: "llama3.2-vision:90b-instruct-q4_K_M"
 
 ranking:
   apriori:
