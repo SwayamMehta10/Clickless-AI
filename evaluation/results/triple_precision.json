@@ -1,0 +1,5 @@
+{
+  "n": 100,
+  "precision": 0.45,
+  "methodology": "llm_judge_grounded_in_source_ingredients"
+}

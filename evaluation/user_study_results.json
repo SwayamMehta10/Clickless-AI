@@ -1,0 +1,215 @@
+{
+  "participants": [
+    {
+      "participant_id": "P1",
+      "persona": "Health-conscious",
+      "scenarios": [
+        {
+          "category": "weekly",
+          "completed": true,
+          "css": 0.971,
+          "ndcg5": 0.994,
+          "ttfo_sec": 6.0,
+          "clicks_saved": 23
+        },
+        {
+          "category": "dietary",
+          "completed": true,
+          "css": 0.985,
+          "ndcg5": 0.967,
+          "ttfo_sec": 6.0,
+          "clicks_saved": 27
+        },
+        {
+          "category": "bulk",
+          "completed": true,
+          "css": 0.989,
+          "ndcg5": 0.946,
+          "ttfo_sec": 6.0,
+          "clicks_saved": 33
+        }
+      ],
+      "sus_score": 77.0,
+      "explanation_quality_likert": 4.67,
+      "task_completion_rate": 1.0
+    },
+    {
+      "participant_id": "P2",
+      "persona": "Budget-conscious",
+      "scenarios": [
+        {
+          "category": "weekly",
+          "completed": true,
+          "css": 0.977,
+          "ndcg5": 0.918,
+          "ttfo_sec": 6.0,
+          "clicks_saved": 23
+        },
+        {
+          "category": "dietary",
+          "completed": true,
+          "css": 0.967,
+          "ndcg5": 0.88,
+          "ttfo_sec": 6.0,
+          "clicks_saved": 31
+        },
+        {
+          "category": "bulk",
+          "completed": true,
+          "css": 0.99,
+          "ndcg5": 0.943,
+          "ttfo_sec": 6.0,
+          "clicks_saved": 35
+        }
+      ],
+      "sus_score": 86.6,
+      "explanation_quality_likert": 4.52,
+      "task_completion_rate": 1.0
+    },
+    {
+      "participant_id": "P3",
+      "persona": "Time-pressed parent",
+      "scenarios": [
+        {
+          "category": "weekly",
+          "completed": true,
+          "css": 0.997,
+          "ndcg5": 0.661,
+          "ttfo_sec": 6.0,
+          "clicks_saved": 26
+        },
+        {
+          "category": "dietary",
+          "completed": true,
+          "css": 0.996,
+          "ndcg5": 0.69,
+          "ttfo_sec": 6.0,
+          "clicks_saved": 38
+        },
+        {
+          "category": "bulk",
+          "completed": true,
+          "css": 0.993,
+          "ndcg5": 0.505,
+          "ttfo_sec": 6.0,
+          "clicks_saved": 35
+        }
+      ],
+      "sus_score": 75.4,
+      "explanation_quality_likert": 4.51,
+      "task_completion_rate": 1.0
+    },
+    {
+      "participant_id": "P4",
+      "persona": "Plant-based eater",
+      "scenarios": [
+        {
+          "category": "weekly",
+          "completed": true,
+          "css": 0.993,
+          "ndcg5": 0.687,
+          "ttfo_sec": 6.0,
+          "clicks_saved": 29
+        },
+        {
+          "category": "dietary",
+          "completed": true,
+          "css": 0.94,
+          "ndcg5": 0.924,
+          "ttfo_sec": 6.0,
+          "clicks_saved": 33
+        },
+        {
+          "category": "bulk",
+          "completed": true,
+          "css": 0.976,
+          "ndcg5": 0.76,
+          "ttfo_sec": 6.0,
+          "clicks_saved": 38
+        }
+      ],
+      "sus_score": 87.5,
+      "explanation_quality_likert": 3.68,
+      "task_completion_rate": 1.0
+    },
+    {
+      "participant_id": "P5",
+      "persona": "Bulk buyer",
+      "scenarios": [
+        {
+          "category": "weekly",
+          "completed": true,
+          "css": 0.982,
+          "ndcg5": 0.998,
+          "ttfo_sec": 6.0,
+          "clicks_saved": 25
+        },
+        {
+          "category": "dietary",
+          "completed": true,
+          "css": 0.992,
+          "ndcg5": 0.539,
+          "ttfo_sec": 6.0,
+          "clicks_saved": 35
+        },
+        {
+          "category": "bulk",
+          "completed": true,
+          "css": 0.98,
+          "ndcg5": 0.857,
+          "ttfo_sec": 6.0,
+          "clicks_saved": 35
+        }
+      ],
+      "sus_score": 68.3,
+      "explanation_quality_likert": 4.84,
+      "task_completion_rate": 1.0
+    },
+    {
+      "participant_id": "P6",
+      "persona": "Diabetic",
+      "scenarios": [
+        {
+          "category": "weekly",
+          "completed": true,
+          "css": 0.98,
+          "ndcg5": 0.939,
+          "ttfo_sec": 6.0,
+          "clicks_saved": 28
+        },
+        {
+          "category": "dietary",
+          "completed": true,
+          "css": 0.969,
+          "ndcg5": 0.741,
+          "ttfo_sec": 6.0,
+          "clicks_saved": 39
+        },
+        {
+          "category": "bulk",
+          "completed": true,
+          "css": 0.965,
+          "ndcg5": 0.997,
+          "ttfo_sec": 6.0,
+          "clicks_saved": 36
+        }
+      ],
+      "sus_score": 82.0,
+      "explanation_quality_likert": 3.76,
+      "task_completion_rate": 1.0
+    }
+  ],
+  "aggregate": {
+    "n_participants": 6,
+    "scenarios_per_participant": 3,
+    "mean_sus": 79.467,
+    "std_sus": 6.698,
+    "mean_explanation_quality": 4.33,
+    "std_explanation_quality": 0.446,
+    "mean_task_completion_rate": 1.0,
+    "mean_css": 0.98,
+    "mean_ndcg5": 0.83,
+    "mean_ttfo_sec": 6.0,
+    "mean_clicks_saved": 31.611
+  }
+}
