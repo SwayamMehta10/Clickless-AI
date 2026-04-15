@@ -1,0 +1,49 @@
+{
+  "run_id": "scenario_2_dietary",
+  "transport": "cloud",
+  "items": [
+    {
+      "name": "Gluten Free Sprouted Seed Bread",
+      "qty": 1
+    },
+    {
+      "name": "Gluten Free Brown Rice Penne Pasta",
+      "qty": 1
+    },
+    {
+      "name": "Vanilla Almond Breeze Almond Milk",
+      "qty": 1
+    },
+    {
+      "name": "Oat Milk Soap",
+      "qty": 1
+    },
+    {
+      "name": "Tofu Rancheros",
+      "qty": 1
+    },
+    {
+      "name": "Organic Spinach Quinoa Powermeal Bowl",
+      "qty": 1
+    },
+    {
+      "name": "Apple Quinoa Cinnamon Oatmeal Fruit Squeeze",
+      "qty": 1
+    },
+    {
+      "name": "BLUEBERRIES",
+      "qty": 1
+    }
+  ],
+  "screenshots": [],
+  "live_url": "https://live.browser-use.com/session/b59720e2-a8d9-42e1-9dfc-5404ec20d62b",
+  "cart_url": null,
+  "items_added": 0,
+  "success": false,
+  "error": "phase=running",
+  "session_id": "b59720e2-a8d9-42e1-9dfc-5404ec20d62b",
+  "step_count": 75,
+  "total_cost_usd": "1.687111999999999991245447362",
+  "reconstructed_status": "stopped",
+  "reconstructed_isTaskSuccessful": false
+}

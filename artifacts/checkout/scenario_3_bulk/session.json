@@ -1,0 +1,52 @@
+{
+  "id": "cb8dfb88-5072-4c9e-8681-066ad23180d6",
+  "status": "stopped",
+  "model": "bu-max",
+  "title": "Add groceries to Instacart cart",
+  "output": {
+    "items_added": 12,
+    "cart_url": "https://www.instacart.com/store/sprouts/storefront",
+    "stopped_at": "Instacart checkout login/authentication modal \u2014 Instacart requires account login to proceed to the checkout review page. Clicking 'Go to checkout' on the Sprouts Farmers Market cart ($25.45, 5 items) triggers the auth modal instead of navigating to a checkout URL. No guest checkout is available."
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "items_added": {
+        "type": "integer"
+      },
+      "cart_url": {
+        "type": "string"
+      },
+      "stopped_at": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "items_added",
+      "stopped_at"
+    ]
+  },
+  "stepCount": 45,
+  "lastStepSummary": "Running Python code",
+  "isTaskSuccessful": true,
+  "liveUrl": null,
+  "recordingUrls": [
+    "https://browser-use-production-private.s3.us-east-2.amazonaws.com/recordings/projects/e2f97e11-7fba-40a5-86b5-1bbd8d923c0f/sessions/7d38ccd0-910b-4f88-989b-30680e89362a/recording.mp4?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIA5JMST7Y2D5XYALWU%2F20260415%2Fus-east-2%2Fs3%2Faws4_request&X-Amz-Date=20260415T085843Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Security-Token=IQoJb3JpZ2luX2VjENT%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLWVhc3QtMiJGMEQCIDGunZryos8GStyoIAc0yQTyIF01lESOfvmFjI0ApFw%2FAiA1wjZ5eGpHNwZQQyG%2BPcu3BlEogLsZvxC9DCNgV%2ByRwCqcBAid%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F8BEAAaDDkxMzUyNDkxNTc2NCIM%2Bim602Y406lfoKLdKvADTBcge0T%2BfTlZeh1a%2B69Ys3LDvavHTlW0HUhnd5xo80ZC2yXept1d0CzTFOpjjVxOG6Yp7vZdjMjY7M%2BvmiI%2BDSDkKIwvqu7tGVdEOrZXBTI0VLG2h%2FQfT9FhrBH9H%2FY1XNUPVX51%2FJbLCBZQU1gVIXFGGWWjAeJvArI90KGf1FUeYl%2B%2BYMSjEO%2BzORqhEW9DcpWkBtRDxu8qZ8XNbS6QH8St%2FR1Lz%2BTakBLJWt%2BnAZFV4R8wUiwlupKwvUTCf84bTgfKbLo8581i3ZOuOLSSWpK27ekBqcys8hpc0GsUFhwfyiV6Hy6chs%2FnAXrRSqCAix42Fpc9%2Bl1jtUQjqIQgyyp2TJqpmLV5baBIq09oseUrI1K7GF2eHGIiMc7KoUNGIOgHC5dlCItJ6TGTk5XgfFW7eWT9C7o3qADYYqCPzkUdIHnpLPjf%2Fu3shsuTIoZNcQnfnSnXnukGrqzWELW4DEz3jmTJhQOt2OyqYZjYZMA7gnEmyLW9r4B8Ejt2vChSDQxb2rkdxD9X041bnJDfpQaUuApTgayzJd%2FSpjYdfxb1PGE018ViBfAFqLcerFZFTxDcNqhLPGMo2N1atAMpS2hW3mXbB%2BN3AnmjWuY7NYwNV%2BfRbqtYa55ThwzD1mQ9h3m0EjbBb5zM5Or9tW6QvDDRovzOBjqnAYoK66onpjBofllVJQM4IBwjrCOETRoEAirxJrNH80xixIy3%2BFy9jQigWitUCdFiC6yJwUBriu%2FCvMl2fDbtq%2FsYGe8dnquoRowrEm2JesZz2vDu%2BUW6ZyRsW9c0X20L6k8fEC%2FY9YH%2BqD5TZ14WEcID2cSwrwe4DeTjMHoi3A5j1aR94kLVHqHxb3PXIwxudDX1RnC9J3IePMLWX90q47uqr53QlMdv&X-Amz-Signature=ccb018e32e5232d910220e9b261a451966cd17c10b6fc8a6d711123d8457d4d6"
+  ],
+  "profileId": null,
+  "workspaceId": null,
+  "proxyCountryCode": "us",
+  "maxCostUsd": "20",
+  "totalInputTokens": 2559379,
+  "totalOutputTokens": 21820,
+  "proxyUsedMb": "0",
+  "llmCostUsd": "1.8529800000000000367861296979299368103966116905212402343750",
+  "proxyCostUsd": "0",
+  "browserCostUsd": "0.011",
+  "totalCostUsd": "1.863980000000000036786129698",
+  "screenshotUrl": "https://browser-use-production-private.s3.us-east-2.amazonaws.com/bu/screenshots/cb8dfb88-5072-4c9e-8681-066ad23180d6/45.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIA5JMST7Y2D5XYALWU%2F20260415%2Fus-east-2%2Fs3%2Faws4_request&X-Amz-Date=20260415T085843Z&X-Amz-Expires=300&X-Amz-SignedHeaders=host&X-Amz-Security-Token=IQoJb3JpZ2luX2VjENT%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLWVhc3QtMiJGMEQCIDGunZryos8GStyoIAc0yQTyIF01lESOfvmFjI0ApFw%2FAiA1wjZ5eGpHNwZQQyG%2BPcu3BlEogLsZvxC9DCNgV%2ByRwCqcBAid%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F8BEAAaDDkxMzUyNDkxNTc2NCIM%2Bim602Y406lfoKLdKvADTBcge0T%2BfTlZeh1a%2B69Ys3LDvavHTlW0HUhnd5xo80ZC2yXept1d0CzTFOpjjVxOG6Yp7vZdjMjY7M%2BvmiI%2BDSDkKIwvqu7tGVdEOrZXBTI0VLG2h%2FQfT9FhrBH9H%2FY1XNUPVX51%2FJbLCBZQU1gVIXFGGWWjAeJvArI90KGf1FUeYl%2B%2BYMSjEO%2BzORqhEW9DcpWkBtRDxu8qZ8XNbS6QH8St%2FR1Lz%2BTakBLJWt%2BnAZFV4R8wUiwlupKwvUTCf84bTgfKbLo8581i3ZOuOLSSWpK27ekBqcys8hpc0GsUFhwfyiV6Hy6chs%2FnAXrRSqCAix42Fpc9%2Bl1jtUQjqIQgyyp2TJqpmLV5baBIq09oseUrI1K7GF2eHGIiMc7KoUNGIOgHC5dlCItJ6TGTk5XgfFW7eWT9C7o3qADYYqCPzkUdIHnpLPjf%2Fu3shsuTIoZNcQnfnSnXnukGrqzWELW4DEz3jmTJhQOt2OyqYZjYZMA7gnEmyLW9r4B8Ejt2vChSDQxb2rkdxD9X041bnJDfpQaUuApTgayzJd%2FSpjYdfxb1PGE018ViBfAFqLcerFZFTxDcNqhLPGMo2N1atAMpS2hW3mXbB%2BN3AnmjWuY7NYwNV%2BfRbqtYa55ThwzD1mQ9h3m0EjbBb5zM5Or9tW6QvDDRovzOBjqnAYoK66onpjBofllVJQM4IBwjrCOETRoEAirxJrNH80xixIy3%2BFy9jQigWitUCdFiC6yJwUBriu%2FCvMl2fDbtq%2FsYGe8dnquoRowrEm2JesZz2vDu%2BUW6ZyRsW9c0X20L6k8fEC%2FY9YH%2BqD5TZ14WEcID2cSwrwe4DeTjMHoi3A5j1aR94kLVHqHxb3PXIwxudDX1RnC9J3IePMLWX90q47uqr53QlMdv&X-Amz-Signature=59a29eaf0d9f12f13299d968eeb5050d337eac90b8c498c65abf0f1499d6b5f8",
+  "agentmailEmail": "thoughtfulbasket688@mail.bu.app",
+  "integrationsUsed": [],
+  "createdAt": "2026-04-15T06:58:48.614025Z",
+  "updatedAt": "2026-04-15T07:09:59.759748Z"
+}

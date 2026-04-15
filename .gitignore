@@ -25,7 +25,10 @@ evaluation/results/miniwob_runs/
 lib/
 
 # Runtime demo outputs (screenshots, action logs, live_url recordings)
-artifacts/
+# artifacts/checkout/ is version-controlled so the BrowserUse checkout demo
+# manifests + screenshots are available with the paper. Exclude only
+# redteam-captcha fixture outputs which are regenerated on every pytest run.
+artifacts/checkout/redteam-captcha/
 
 # Local credential vault
 data/.vault_salt

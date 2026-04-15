@@ -1,0 +1,23 @@
+Open https://www.instacart.com in the browser.
+
+For each of the following grocery items, use the search bar to find the product,
+then click 'Add to cart' on the top in-stock result. After adding all items,
+open the cart and proceed toward checkout.
+
+Items to add:
+- Condensed Chicken Broth x1
+- 100% Organic Diced Tomatoes x1
+- Organic Rice Vinegar x1
+- Whole Grain Linguine Pasta x1
+- 100% Whole Wheat Flour Burrito Tortillas x1
+- Pure Cane Granulated W/Spout Sugar x1
+- Organic Olive Oil  Spray x1
+- Shrimp with Pasta & Vegetables x1
+- Italian Herb Porcini Mushrooms Chicken Sausage x1
+- Pastured Eggs x1
+- 100% Whole Wheat Pita Bread x1
+- Light Strawberry Blueberry Yogurt x1
+
+When you reach the checkout review page, STOP. Do not enter any payment details, do not click 'Place Order'.
+
+Return a JSON object with: items_added (integer), cart_url (string), stopped_at (string).

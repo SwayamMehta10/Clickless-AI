@@ -11,6 +11,9 @@ curl -s http://localhost:7474 | head
 pgrep -af neo4j
 pgrep -af apptainer
 
+### Check if Ollama is serving
+pgrep -af ollama
+
 #### First time ollama-setup
 ollama pull mistral:7b
 ollama pull llama3.2-vision:11b

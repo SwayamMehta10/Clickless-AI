@@ -1,0 +1,46 @@
+{
+  "id": "b59720e2-a8d9-42e1-9dfc-5404ec20d62b",
+  "status": "stopped",
+  "model": "bu-max",
+  "title": "Instacart order to checkout review",
+  "output": "Task was cancelled.",
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "items_added": {
+        "type": "integer"
+      },
+      "cart_url": {
+        "type": "string"
+      },
+      "stopped_at": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "items_added",
+      "stopped_at"
+    ]
+  },
+  "stepCount": 75,
+  "lastStepSummary": "Clicking at (756, 700)",
+  "isTaskSuccessful": false,
+  "liveUrl": null,
+  "recordingUrls": [],
+  "profileId": null,
+  "workspaceId": null,
+  "proxyCountryCode": "us",
+  "maxCostUsd": "20",
+  "totalInputTokens": 3486603,
+  "totalOutputTokens": 10696,
+  "proxyUsedMb": "0",
+  "llmCostUsd": "1.6571119999999999912454473616207906161434948444366455078125",
+  "proxyCostUsd": "0",
+  "browserCostUsd": "0.030",
+  "totalCostUsd": "1.687111999999999991245447362",
+  "screenshotUrl": "https://browser-use-production-private.s3.us-east-2.amazonaws.com/bu/screenshots/b59720e2-a8d9-42e1-9dfc-5404ec20d62b/72.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIA5JMST7Y2IMQF5H6J%2F20260415%2Fus-east-2%2Fs3%2Faws4_request&X-Amz-Date=20260415T085856Z&X-Amz-Expires=300&X-Amz-SignedHeaders=host&X-Amz-Security-Token=IQoJb3JpZ2luX2VjENT%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLWVhc3QtMiJGMEQCICcfbamXpQpdWNP8FgxkH0hzTcz7kzuRiwzFJlrn37rdAiBfBGN4N12Pz6JZ%2BXbTLcIJetaDX6%2FIoh8m1CcaFDNaSiqcBAid%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F8BEAAaDDkxMzUyNDkxNTc2NCIMB2%2FE%2B1jIl4a6mj54KvADYKG7lOEggky%2BmnZiYARzF1h8RnlBaxXQ6ja2c4Rc%2FBcksoivGYMioceMfJ7Phvwy4NlNK8x2gkDdrIh28MfRn50UCxXFuAFdSTgA3VtwdqbPKq78Z2ShmKrtOczSd0rRPx4Lww4t3vp3Kys1UCzqKD0HV%2B9xJDbQrxMl4ugxm2k7mcPDVAo%2B4L1KQomDAusqJjfLBZLtgYESkxiXpvp0YG46eF%2Bfuy4kbNS6nscUezcK24Xh9Lltfn1f%2FbO8F5Ij9zK2bG%2FgI6yeNZb%2Bq6DnlO9kFkKY92%2BDBtYCgPzS07UcjZ4w5WFSn0fhjoez9v7IyfbdwQIkUoSDMnTR8dyhTNQhqw3n%2Fg7fPfIOyOxahPd1zPpsw%2F9Qc2WYQ8oBlF4uEMS%2B0%2FuB6RnWCr8GzKnWVFAUQhgIXRNAbMaaAvXKFhwIomPyfg1twzaNp%2FZsbAyaBLJaI4lRzcIxn04IAupSOJJfvUtiifG8BqDHx1kLZj4zZar1jTfJ%2BlT75kQyzVqKBn7KJQ0Xdv2B9sHQ6%2FUNugSeM%2BE4HePrnFaBWhfSIPeTZoHTf6L1ZYRHcNedvBvilb6eGnpcBUXVaqrKtAcfFjsxtG7M9PanqpdFIKcH%2FnJZXjvSYYjz18MLWLGzM4ZE27utJ1ToLoaCQ5RPuHTNvDDFn%2FzOBjqnAVJM1jq0msvpJ8gS9%2BBJD81Hi0DYavR%2BsQxwfqOCaDz8b9kITK3AwJGuJMjBIY%2B0G1cWhu27srgNkiqF3BTnJMFdsiOQmQAv%2BTi6TTUkzxut299QoHn0bT1oTMmrwnbxMeypDGrLs0SpqcwBT5mh7WMylvfqSBh6QYes4j%2FeKxAZLbfuYuj%2B0PD0PZmHDjNcNBYbjrORdfIh3fMY0uv9IEt10ZaR2c8P&X-Amz-Signature=77f082928289cbdc3dcfd03b1e78c1bce6e85a5a72b4472aa7b53626421bb070",
+  "agentmailEmail": "amusedbird773@mail.bu.app",
+  "integrationsUsed": [],
+  "createdAt": "2026-04-15T06:29:03.903114Z",
+  "updatedAt": "2026-04-15T06:58:59.446020Z"
+}

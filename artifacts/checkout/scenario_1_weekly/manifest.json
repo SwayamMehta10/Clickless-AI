@@ -1,0 +1,57 @@
+{
+  "run_id": "scenario_1_weekly",
+  "transport": "cloud",
+  "items": [
+    {
+      "name": "Vanilla Milk Chocolate Almond Ice Cream Bars Multi-Pack",
+      "qty": 1
+    },
+    {
+      "name": "Pastured Eggs",
+      "qty": 1
+    },
+    {
+      "name": "100% Whole Wheat Pita Bread",
+      "qty": 1
+    },
+    {
+      "name": "Chicken Breast Nuggets, Dinosaur Shaped",
+      "qty": 1
+    },
+    {
+      "name": "Broccoli Carrots Sugar Snap Peas & Water Chestnuts",
+      "qty": 1
+    },
+    {
+      "name": "Golden Delicious Apples",
+      "qty": 1
+    },
+    {
+      "name": "Organic Rice Vinegar",
+      "qty": 1
+    },
+    {
+      "name": "Whole Grain Linguine Pasta",
+      "qty": 1
+    },
+    {
+      "name": "Light Strawberry Blueberry Yogurt",
+      "qty": 1
+    },
+    {
+      "name": "Organic Olive Oil  Spray",
+      "qty": 1
+    }
+  ],
+  "screenshots": [
+    "artifacts/checkout/scenario_1_weekly/step_001.png",
+    "artifacts/checkout/scenario_1_weekly/step_003.png",
+    "artifacts/checkout/scenario_1_weekly/step_005.png"
+  ],
+  "live_url": "https://live.browser-use.com/session/80a65b12-4f30-4e5d-961a-4dc8e8331aae",
+  "cart_url": "https://www.instacart.com/store/mulberry-market/storefront",
+  "items_added": 10,
+  "success": true,
+  "error": null,
+  "action_log_entries": 10
+}

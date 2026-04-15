@@ -1,0 +1,21 @@
+Open https://www.instacart.com in the browser.
+
+For each of the following grocery items, use the search bar to find the product,
+then click 'Add to cart' on the top in-stock result. After adding all items,
+open the cart and proceed toward checkout.
+
+Items to add:
+- Vanilla Milk Chocolate Almond Ice Cream Bars Multi-Pack x1
+- Pastured Eggs x1
+- 100% Whole Wheat Pita Bread x1
+- Chicken Breast Nuggets, Dinosaur Shaped x1
+- Broccoli Carrots Sugar Snap Peas & Water Chestnuts x1
+- Golden Delicious Apples x1
+- Organic Rice Vinegar x1
+- Whole Grain Linguine Pasta x1
+- Light Strawberry Blueberry Yogurt x1
+- Organic Olive Oil  Spray x1
+
+When you reach the checkout review page, STOP. Do not enter any payment details, do not click 'Place Order'.
+
+Return a JSON object with: items_added (integer), cart_url (string), stopped_at (string).

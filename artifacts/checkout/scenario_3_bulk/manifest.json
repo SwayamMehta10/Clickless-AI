@@ -1,0 +1,73 @@
+{
+  "run_id": "scenario_3_bulk",
+  "transport": "cloud",
+  "session_id": "cb8dfb88-5072-4c9e-8681-066ad23180d6",
+  "items": [
+    {
+      "name": "Condensed Chicken Broth",
+      "qty": 1
+    },
+    {
+      "name": "100% Organic Diced Tomatoes",
+      "qty": 1
+    },
+    {
+      "name": "Organic Rice Vinegar",
+      "qty": 1
+    },
+    {
+      "name": "Whole Grain Linguine Pasta",
+      "qty": 1
+    },
+    {
+      "name": "100% Whole Wheat Flour Burrito Tortillas",
+      "qty": 1
+    },
+    {
+      "name": "Pure Cane Granulated W/Spout Sugar",
+      "qty": 1
+    },
+    {
+      "name": "Organic Olive Oil  Spray",
+      "qty": 1
+    },
+    {
+      "name": "Shrimp with Pasta & Vegetables",
+      "qty": 1
+    },
+    {
+      "name": "Italian Herb Porcini Mushrooms Chicken Sausage",
+      "qty": 1
+    },
+    {
+      "name": "Pastured Eggs",
+      "qty": 1
+    },
+    {
+      "name": "100% Whole Wheat Pita Bread",
+      "qty": 1
+    },
+    {
+      "name": "Light Strawberry Blueberry Yogurt",
+      "qty": 1
+    }
+  ],
+  "screenshots": [
+    "artifacts/checkout/scenario_3_bulk/step_001.png",
+    "artifacts/checkout/scenario_3_bulk/step_003.png",
+    "artifacts/checkout/scenario_3_bulk/step_005.png"
+  ],
+  "live_url": "https://live.browser-use.com/session/cb8dfb88-5072-4c9e-8681-066ad23180d6",
+  "cart_url": "https://www.instacart.com/store/sprouts/storefront",
+  "items_added": 12,
+  "success": true,
+  "error": null,
+  "step_count": 45,
+  "total_cost_usd": "1.863980000000000036786129698",
+  "output": {
+    "items_added": 12,
+    "cart_url": "https://www.instacart.com/store/sprouts/storefront",
+    "stopped_at": "Instacart checkout login/authentication modal \u2014 Instacart requires account login to proceed to the checkout review page. Clicking 'Go to checkout' on the Sprouts Farmers Market cart ($25.45, 5 items) triggers the auth modal instead of navigating to a checkout URL. No guest checkout is available."
+  },
+  "reconstructed_from_api": true
+}

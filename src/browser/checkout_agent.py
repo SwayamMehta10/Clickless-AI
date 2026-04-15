@@ -134,7 +134,10 @@ class _BrowserUseCloudTransport:
         result_payload: Dict[str, Any] = {}
         is_successful: Optional[bool] = None
         phase = sess.get("status", "running")
-        deadline = time.time() + 900
+        # 45-minute deadline — complex Instacart shopping tasks with 10+ items
+        # routinely take 20-30 minutes on bu-max. 900s was too short and caused
+        # false-negative success=False reports during the 2026-04-14 demo run.
+        deadline = time.time() + 2700
 
         while not terminal and time.time() < deadline:
             await asyncio.sleep(4)

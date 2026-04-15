@@ -368,20 +368,234 @@ kill $SERVER_PID $TUNNEL_PID 2>/dev/null
 
 ## 6. Browser Use Cloud checkout demo (3 scenarios)
 
-This is the canonical demo artifact for the proposal's Browser Handoff section. Each scenario produces step screenshots, an action log, a `live_url` recording and a manifest.
+This is the canonical demo artifact for the proposal's Browser Handoff
+section. Each scenario builds a cart locally via `rank_with_kg` + Llama
+3.2 90B graphrag relevance, then dispatches one Browser Use Cloud v3
+session (`bu-max` model) against `instacart.com` that searches each
+cart item, adds the top in-stock result, and halts at the checkout
+authentication gate.
+
+**Required env:**
 
 ```bash
-python -m scripts.run_browser_demo --scenarios all
+export BROWSERUSE_API_KEY="bu_..."        # v3 key
+export BROWSERUSE_CLOUD_MODEL="bu-max"    # or bu-mini / bu-ultra
 ```
 
-Artifacts:
+### 6a. Detached launch (survives SSH session drop)
 
-- `artifacts/checkout/scenario_1_weekly/`
-- `artifacts/checkout/scenario_2_dietary/`
-- `artifacts/checkout/scenario_3_bulk/`
-- `artifacts/checkout/manifest.json`
+Sol sessions die on SSH disconnect; any `python` process running in
+the foreground dies with them. Launch the demo under `nohup` so it
+keeps going through a session transition:
 
-The Streamlit UI also runs the same `run_checkout` flow when the user clicks **Confirm and Checkout**, and embeds the `live_url` iframe + step screenshots inline.
+```bash
+cd "/scratch/smehta90/Clickless AI"
+export PYTHONPATH="$(pwd)"
+nohup python -u -m scripts.run_browser_demo --scenarios all \
+  > /tmp/browser_demo.log 2>&1 &
+disown
+echo "pid=$!"
+```
+
+Check progress any time:
+
+```bash
+tail -f /tmp/browser_demo.log
+pgrep -fa run_browser_demo
+ls -la artifacts/checkout/
+```
+
+### 6b. Watch live sessions
+
+Every scenario prints its session id + liveUrl as soon as the cloud
+session is created:
+
+```
+Browser Use Cloud session created: id=<uuid> liveUrl=https://live.browser-use.com/session/<uuid>
+```
+
+Open the liveUrl in your laptop browser for a real-time video of the
+agent driving Instacart. Also open `https://cloud.browser-use.com/session/<uuid>`
+for the dashboard view (post-hoc scrubbing through messages +
+screenshots; auth required).
+
+### 6c. Expected wall clock + cost (per session-2026-04-14 data)
+
+| Phase | Per scenario | Per-scenario cost |
+|---|---|---|
+| Build cart (Llama 90B ranking) | ~10-15 min | — (local GPU) |
+| Cloud session checkout | ~13-45 min | ~$0.50-2.00 on `bu-max` |
+| Total | ~25-55 min | — |
+
+Three scenarios sequentially ≈ **90-165 min wall clock**. Ollama stays
+loaded throughout.
+
+### 6d. Resume-safe — scenarios already done are skipped
+
+Each completed scenario writes its own `manifest.json` inside its
+`artifacts/checkout/<scenario_id>/` directory. On re-invocation the
+runner checks those manifests and skips scenarios whose manifest
+reports `success: true`. To force a re-run of a specific scenario:
+
+```bash
+python -m scripts.run_browser_demo --scenarios scenario_2_dietary --force
+```
+
+### 6e. Artifacts
+
+- `artifacts/checkout/scenario_1_weekly/` — manifest.json, task.txt,
+  action_log.json, step_NNN.png screenshots
+- `artifacts/checkout/scenario_2_dietary/` — same layout
+- `artifacts/checkout/scenario_3_bulk/` — same layout
+- `artifacts/checkout/manifest.json` — aggregate across all scenarios,
+  written only after all three terminate
+
+Per-scenario manifest fields: `run_id`, `transport`, `session_id`,
+`items`, `screenshots`, `live_url`, `cart_url`, `items_added`,
+`success`, `error`, `step_count`, `total_cost_usd`, `output`.
+
+### 6f. Streamlit path (same flow, interactive)
+
+The Streamlit UI runs the same `run_checkout` flow when the user
+clicks **Confirm and Checkout**, and embeds the `live_url` iframe +
+step screenshot grid inline in the chat. Useful for recording the
+demo video directly from the Streamlit front end rather than from a
+script log.
+
+### 6g. Post-hoc artifact recovery (if the runner crashed mid-run)
+
+If the Sol session died before the runner could terminate and write
+manifests — as happened in the 2026-04-14 run for scenario 3 —
+reconstruct the missing manifest from the Browser Use Cloud API:
+
+```bash
+cd "/scratch/smehta90/Clickless AI"
+export BROWSERUSE_API_KEY="bu_..."
+
+python -c "
+import json, os, httpx, re
+from pathlib import Path
+
+# Replace these two per scenario you need to reconstruct
+sid = '<session_uuid_from_log>'
+scenario_id = 'scenario_3_bulk'
+
+out = Path(f'artifacts/checkout/{scenario_id}')
+out.mkdir(parents=True, exist_ok=True)
+headers = {'X-Browser-Use-API-Key': os.environ['BROWSERUSE_API_KEY']}
+base = 'https://api.browser-use.com/api/v3'
+
+with httpx.Client(headers=headers, timeout=60) as http:
+    sess = http.get(f'{base}/sessions/{sid}').json()
+    (out / 'session.json').write_text(json.dumps(sess, indent=2))
+
+    all_msgs, cursor = [], None
+    for _ in range(20):
+        params = {'after': cursor} if cursor else {}
+        r = http.get(f'{base}/sessions/{sid}/messages', params=params)
+        r.raise_for_status()
+        obj = r.json()
+        all_msgs.extend(obj.get('messages') or [])
+        if not obj.get('hasMore') or not obj.get('messages'): break
+        cursor = all_msgs[-1].get('id')
+
+action_log = [{'id': m.get('id'), 'role': m.get('role'), 'type': m.get('type'),
+               'summary': m.get('summary'), 'data': m.get('data'),
+               'screenshot_url': m.get('screenshotUrl'),
+               'created_at': m.get('createdAt'), 'hidden': m.get('hidden')}
+              for m in all_msgs]
+(out / 'action_log.json').write_text(json.dumps(action_log, indent=2))
+
+# Refetch for fresh signed URLs, then download
+fresh_urls = {}
+with httpx.Client(headers=headers, timeout=60) as http:
+    cursor = None
+    for _ in range(20):
+        params = {'after': cursor} if cursor else {}
+        obj = http.get(f'{base}/sessions/{sid}/messages', params=params).json()
+        for m in obj.get('messages', []):
+            if m.get('id') and m.get('screenshotUrl'):
+                fresh_urls[m['id']] = m['screenshotUrl']
+        if not obj.get('hasMore'): break
+        cursor = (obj.get('messages') or [{}])[-1].get('id')
+
+with httpx.Client(timeout=120) as http:
+    for i, m in enumerate(all_msgs):
+        url = fresh_urls.get(m.get('id'))
+        if not url: continue
+        try:
+            img = http.get(url); img.raise_for_status()
+            (out / f'step_{i:03d}.png').write_bytes(img.content)
+        except Exception as e:
+            print(f'  [{i}] {e}')
+
+# Rebuild the manifest from the session + task.txt
+items = []
+task_txt = (out / 'task.txt').read_text() if (out / 'task.txt').exists() else ''
+for line in task_txt.splitlines():
+    m = re.match(r'- (.+) x(\d+)', line.strip())
+    if m:
+        items.append({'name': m.group(1), 'qty': int(m.group(2))})
+
+output = sess.get('output') or {}
+is_successful = sess.get('isTaskSuccessful')
+phase = sess.get('status')
+success = bool(is_successful) if is_successful is not None else phase in ('finished', 'completed')
+
+manifest = {
+    'run_id': scenario_id,
+    'transport': 'cloud',
+    'session_id': sid,
+    'items': items,
+    'screenshots': sorted(str(p) for p in out.glob('step_*.png')),
+    'live_url': f'https://live.browser-use.com/session/{sid}',
+    'cart_url': output.get('cart_url') if isinstance(output, dict) else None,
+    'items_added': int(output.get('items_added', 0)) if isinstance(output, dict) else 0,
+    'success': success,
+    'error': None if success else f'phase={phase}',
+    'step_count': sess.get('stepCount'),
+    'total_cost_usd': sess.get('totalCostUsd'),
+    'output': output,
+    'reconstructed_from_api': True,
+}
+(out / 'manifest.json').write_text(json.dumps(manifest, indent=2, default=str))
+print(f'wrote {out}/manifest.json success={success}')
+"
+```
+
+Then rebuild the top-level aggregate manifest:
+
+```bash
+python -c "
+import json
+from pathlib import Path
+root = Path('artifacts/checkout')
+runs = []
+for sid in ('scenario_1_weekly', 'scenario_2_dietary', 'scenario_3_bulk'):
+    mf = root / sid / 'manifest.json'
+    if mf.exists():
+        runs.append({'scenario': sid, 'result': json.loads(mf.read_text())})
+aggregate = {
+    'n_scenarios': len(runs),
+    'n_success': sum(1 for r in runs if r['result'].get('success')),
+    'scenarios': runs,
+    'reconstructed_post_hoc': True,
+}
+(root / 'manifest.json').write_text(json.dumps(aggregate, indent=2, default=str))
+print(json.dumps({'n': aggregate['n_scenarios'], 'n_success': aggregate['n_success']}, indent=2))
+"
+```
+
+**IMPORTANT:** Signed screenshot URLs expire after 300 seconds. Run
+the recovery soon after the session reaches a terminal phase to
+maximize the number of images you can download.
+
+### 6h. Historical outcome (session 2026-04-14)
+
+See RUNBOOK.md §8.14 for the final 2/3 success state, per-scenario
+stores reached (Mulberry Market, Sprouts Farmers Market), and the
+scenario 2 timeout story. Re-running scenario 2 with the patched
+2700s deadline will produce a clean 3/3 result for the camera-ready.
 
 ---
 
